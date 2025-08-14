@@ -1,99 +1,296 @@
 <!DOCTYPE html>
-<!-- saved from url=(0043)file:///C:/Users/P143G/Downloads/index.html -->
-<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyDrive by Micah</title>
-    <style>
-        :root{--brand:#002147;--accent:#ff8c00}
-        *{box-sizing:border-box}
-        body {font-family: Arial, sans-serif;margin: 0;padding: 0;line-height: 1.6;background:#f7f9fc;color:#111}
-        header {background: var(--brand);color: white;padding: 22px;text-align: center}
-        nav {background: #fff; padding: 10px; text-align: center; position: sticky; top: 0; z-index: 10; border-bottom:1px solid #e5e7eb}
-        nav a {margin: 0 12px;text-decoration: none;color: var(--brand);font-weight: bold}
-        .hero {background: url('https://via.placeholder.com/1600x500?text=EasyDrive+by+Micah') no-repeat center center/cover;height: 320px;display: flex;align-items: center;justify-content: center;color: white;font-size: 26px;font-weight: bold;text-shadow: 2px 2px 5px black}
-        section {padding: 26px; max-width: 1100px; margin: auto}
-        h2 {color: var(--brand);text-align: center;margin-top:0}
-        .fleet {display: grid;grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));gap: 16px}
-        .card {border: 1px solid #e5e7eb;padding: 16px;text-align: center;border-radius: 10px;background: #fff;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-        .card img {max-width: 100%;height: auto;border-radius: 8px}
-        .btn {background: var(--accent);color: white;padding: 10px 16px;border: none;cursor: pointer;font-size: 14px;border-radius: 6px}
-        form {display: grid;gap: 10px;max-width: 480px;margin: 12px auto}
-        input, textarea {padding: 12px;border: 1px solid #cbd5e1;border-radius: 6px}
-        footer {background: var(--brand);color: white;text-align: center;padding: 12px;margin-top:20px}
-        .center {text-align:center}
-        .pill{display:inline-block;background:#e6eefb;color:var(--brand);padding:6px 10px;border-radius:999px;font-size:12px;margin:4px 6px}
-    </style>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EasyDrive by Micah • Dashboard</title>
+  <style>
+    :root{
+      --bg:#0b0b0b;        /* near-black */
+      --panel:#121316;     /* dark panel */
+      --muted:#1b1d22;     /* subtle borders */
+      --txt:#f6f7fb;       /* white text */
+      --sub:#c9cbd3;       /* light text */
+      --accent:#e11d2e;    /* red */
+      --accent-2:#ff4d61;  /* lighter red */
+      --ok:#22c55e;        /* status: completed */
+      --warn:#eab308;      /* status: upcoming */
+      --bad:#ef4444;       /* status: cancelled */
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif}
+
+    /* Layout */
+    .app{display:grid;grid-template-columns:280px 1fr;min-height:100dvh}
+    aside{background:var(--panel);border-right:1px solid var(--muted);display:flex;flex-direction:column}
+    main{padding:20px 24px 40px;}
+
+    /* Sidebar */
+    .brand{display:flex;align-items:center;gap:12px;padding:18px 16px;border-bottom:1px solid var(--muted)}
+    .brand img{width:44px;height:44px;border-radius:999px;object-fit:cover;border:2px solid var(--accent)}
+    .brand h1{font-size:18px;margin:0;line-height:1.1}
+    .slogan{font-size:12px;color:var(--sub);margin-top:3px}
+
+    .nav{display:flex;flex-direction:column;padding:12px}
+    .nav a{display:flex;align-items:center;gap:10px;color:var(--sub);text-decoration:none;padding:10px 12px;border-radius:10px}
+    .nav a:hover,.nav a.active{background:linear-gradient(90deg, rgba(225,29,46,.18), transparent);color:var(--txt)}
+
+    /* Topbar title */
+    .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+    .top h2{margin:0;font-size:24px;font-weight:700}
+
+    /* Cards grid */
+    .grid{display:grid;gap:16px}
+    .grid.cols-3{grid-template-columns:repeat(3, minmax(0,1fr))}
+    .grid.cols-2{grid-template-columns:repeat(2, minmax(0,1fr))}
+
+    .card{background:var(--panel);border:1px solid var(--muted);border-radius:16px;padding:16px}
+    .stat{display:flex;align-items:center;gap:12px}
+    .stat i{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--accent);}
+    .stat .label{color:var(--sub);font-size:13px}
+    .stat .value{font-size:22px;font-weight:800}
+
+    /* Simple bar chart using CSS only */
+    .bars{display:grid;grid-auto-flow:column;gap:10px;align-items:end;height:180px;margin-top:8px}
+    .bar{background:linear-gradient(180deg,var(--accent-2),var(--accent));width:28px;border-radius:8px 8px 4px 4px}
+    .bar small{display:block;text-align:center;margin-top:6px;color:var(--sub)}
+    .bar-wrap{display:flex;flex-direction:column;align-items:center}
+
+    /* Donut chart (SVG) – for Bookings by Vehicle (single Vios for now) */
+    .donut{display:grid;place-items:center;}
+    .legend{display:grid;gap:8px;margin-top:8px}
+    .legend span{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--sub)}
+    .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+
+    /* Table */
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{padding:12px;border-bottom:1px solid var(--muted);text-align:left;font-size:14px}
+    th{color:var(--sub);font-weight:600}
+    .badge{padding:6px 10px;border-radius:999px;font-size:12px;display:inline-block}
+    .b-ok{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.35)}
+    .b-warn{background:rgba(234,179,8,.15);color:#fde68a;border:1px solid rgba(234,179,8,.35)}
+    .b-bad{background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.35)}
+
+    /* Rates cards */
+    .rates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .rate{background:linear-gradient(180deg,#1a1b20,#121316);border:1px solid var(--muted);border-radius:14px;padding:14px}
+    .rate h4{margin:0 0 8px;font-size:16px;color:var(--txt)}
+    .price{font-size:26px;font-weight:800;color:var(--accent)}
+    .note{color:var(--sub);font-size:12px}
+
+    /* CTA */
+    .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
+    .btn{background:var(--accent);color:white;border:0;border-radius:10px;padding:10px 14px;text-decoration:none;font-weight:700}
+    .btn.secondary{background:transparent;border:1px solid var(--muted);color:var(--txt)}
+    .btn:hover{filter:brightness(1.1)}
+
+    /* Responsive */
+    @media (max-width: 960px){
+      .app{grid-template-columns:1fr}
+      aside{position:sticky;top:0;z-index:40}
+      .brand{justify-content:center}
+      .nav{flex-direction:row;flex-wrap:wrap;gap:8px;justify-content:center}
+      .grid.cols-3{grid-template-columns:1fr}
+      .grid.cols-2{grid-template-columns:1fr}
+      .rates{grid-template-columns:1fr}
+    }
+  </style>
 </head>
 <body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside>
+      <div class="brand">
+        <!-- Replace logo.png with your actual logo file name in the same folder -->
+        <img src="logo.png" alt="EasyDrive by Micah logo" onerror="this.style.display='none'" />
+        <div>
+          <h1>EasyDrive by Micah</h1>
+          <div class="slogan">Drive More, Spend Less</div>
+        </div>
+      </div>
+      <nav class="nav">
+        <a class="active" href="#">Dashboard</a>
+        <a href="#vehicles">Vehicles</a>
+        <a href="#rates">Rates</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </aside>
 
-<header>
-    <h1>EasyDrive by Micah</h1>
-    <p>Affordable &amp; Reliable Car Rentals in Bulacan</p>
-</header>
+    <!-- Main -->
+    <main>
+      <div class="top">
+        <h2>Dashboard</h2>
+        <div class="cta">
+          <a class="btn" href="#contact">Book Now</a>
+          <a class="btn secondary" href="#rates">View Rates</a>
+        </div>
+      </div>
 
-<nav>
-    <a href="file:///C:/Users/P143G/Downloads/index.html#home">Home</a>
-    <a href="file:///C:/Users/P143G/Downloads/index.html#fleet">Our Fleet</a>
-    <a href="file:///C:/Users/P143G/Downloads/index.html#booking">Book Now</a>
-    <a href="file:///C:/Users/P143G/Downloads/index.html#contact">Contact</a>
-</nav>
-
-<a id="home"></a>
-<div class="hero">
-    Drive with Confidence, Rent with EasyDrive
-</div>
-
-<section id="fleet">
-    <h2>Our Fleet</h2>
-    <div class="center">
-        <span class="pill">Unlimited Mileage</span>
-        <span class="pill">Discount for 2+ Days</span>
-        <span class="pill">Bulacan: ₱1,899/day</span>
-        <span class="pill">Outside Bulacan: ₱2,299/day</span>
-    </div>
-    <div class="fleet">
+      <!-- Stat cards -->
+      <section class="grid cols-3">
         <div class="card">
-            <img src="https://via.placeholder.com/400x260?text=Toyota+Vios" alt="Toyota Vios">
-            <h3>Toyota Vios</h3>
-            <p>₱1,899/day (Bulacan) • ₱2,299/day (Outside)</p>
-            <a class="btn" href="file:///C:/Users/P143G/Downloads/index.html#booking">Book This</a>
+          <div class="stat">
+            <i>📅</i>
+            <div>
+              <div class="label">Total Bookings (month)</div>
+              <div class="value">12</div>
+            </div>
+          </div>
         </div>
         <div class="card">
-            <img src="https://via.placeholder.com/400x260?text=Toyota+Innova" alt="Toyota Innova">
-            <h3>Toyota Innova</h3>
-            <p>₱2,499/day (Bulacan) • ₱2,899/day (Outside)</p>
-            <a class="btn" href="file:///C:/Users/P143G/Downloads/index.html#booking">Book This</a>
+          <div class="stat">
+            <i>₱</i>
+            <div>
+              <div class="label">Total Income (month)</div>
+              <div class="value">₱28,788</div>
+            </div>
+          </div>
         </div>
-    </div>
-</section>
+        <div class="card">
+          <div class="stat">
+            <i>🚗</i>
+            <div>
+              <div class="label">Vehicles Rented</div>
+              <div class="value">Toyota Vios</div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-<section id="booking">
-    <h2>Book a Car</h2>
-    <!-- Replace YOUR_FORM_ID below after creating your Formspree form -->
-    <form action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
-        <input type="text" name="name" placeholder="Full Name" required="">
-        <input type="tel" name="phone" placeholder="Phone Number" required="">
-        <input type="email" name="_replyto" placeholder="Email" required="">
-        <textarea name="message" placeholder="Car Model • Pickup/Return Dates • Location" required=""></textarea>
-        <button class="btn" type="submit">Send Booking Request</button>
-    </form>
-    <p class="center" style="font-size: 12px;">We'll confirm your booking via phone or email.</p>
-</section>
+      <!-- Charts row -->
+      <section class="grid cols-2" style="margin-top:16px">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <strong>Monthly Income (₱)</strong>
+            <span style="color:var(--sub);font-size:12px">Sample data</span>
+          </div>
+          <div class="bars">
+            <!-- Adjust the inline height values to match your real income -->
+            <div class="bar-wrap"><div class="bar" style="height:70px"></div><small>Jan</small></div>
+            <div class="bar-wrap"><div class="bar" style="height:90px"></div><small>Feb</small></div>
+            <div class="bar-wrap"><div class="bar" style="height:130px"></div><small>Mar</small></div>
+            <div class="bar-wrap"><div class="bar" style="height:110px"></div><small>Apr</small></div>
+            <div class="bar-wrap"><div class="bar" style="height:150px"></div><small>May</small></div>
+            <div class="bar-wrap"><div class="bar" style="height:120px"></div><small>Jun</small></div>
+            <div class="bar-wrap"><div class="bar" style="height:160px"></div><small>Jul</small></div>
+            <div class="bar-wrap"><div class="bar" style="height:190px"></div><small>Aug</small></div>
+          </div>
+        </div>
 
-<section id="contact">
-    <h2>Contact Us</h2>
-    <p class="center">
-        📞 0912 345 6789<br>
-        📩 easydrive@gmail.com<br>
-        📍 Matimbo, Malolos, Bulacan
-    </p>
-</section>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <strong>Bookings by Vehicle</strong>
+            <span style="color:var(--sub);font-size:12px">Current: Vios only</span>
+          </div>
+          <div class="donut">
+            <!-- Donut chart: single slice for Vios -->
+            <svg width="180" height="180" viewBox="0 0 42 42" role="img" aria-label="Bookings by Vehicle">
+              <circle r="15.915" cx="21" cy="21" fill="transparent" stroke="#2a2d34" stroke-width="7"/>
+              <circle r="15.915" cx="21" cy="21" fill="transparent" stroke="#e11d2e" stroke-width="7" stroke-dasharray="100 0" stroke-dashoffset="25"/>
+            </svg>
+            <div class="legend">
+              <span><span class="dot" style="background:var(--accent)"></span>Toyota Vios (100%)</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
-<footer>
-    © 2025 EasyDrive by Micah. All rights reserved.
-</footer>
+      <!-- Recent bookings table -->
+      <section class="card" style="margin-top:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <strong>Recent Bookings</strong>
+          <span style="color:var(--sub);font-size:12px">Sample entries</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Client Name</th>
+              <th>Vehicle</th>
+              <th>Pickup Date</th>
+              <th>Return Date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Juan Dela Cruz</td>
+              <td>Toyota Vios</td>
+              <td>Aug 21</td>
+              <td>Aug 23</td>
+              <td><span class="badge b-ok">Completed</span></td>
+            </tr>
+            <tr>
+              <td>Ana Santos</td>
+              <td>Toyota Vios</td>
+              <td>Aug 28</td>
+              <td>Aug 30</td>
+              <td><span class="badge b-warn">Upcoming</span></td>
+            </tr>
+            <tr>
+              <td>Mark Reyes</td>
+              <td>Toyota Vios</td>
+              <td>Aug 10</td>
+              <td>Aug 12</td>
+              <td><span class="badge b-bad">Cancelled</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
 
+      <!-- Vehicles section -->
+      <section id="vehicles" class="card" style="margin-top:16px">
+        <strong>Available Vehicle</strong>
+        <div style="display:grid;grid-template-columns:160px 1fr;gap:16px;margin-top:12px;align-items:center">
+          <img src="vios.jpg" alt="Toyota Vios" style="width:100%;border-radius:12px;border:1px solid var(--muted)" onerror="this.src='https://via.placeholder.com/320x200?text=Toyota+Vios'">
+          <div>
+            <h3 style="margin:0 0 6px">Toyota Vios</h3>
+            <p style="margin:0;color:var(--sub)">Fuel-efficient sedan • Automatic • Aircon • Well-maintained</p>
+            <div class="cta" style="margin-top:10px">
+              <a class="btn" href="#rates">See Rates</a>
+              <a class="btn secondary" href="#contact">Book Now</a>
+            </div>
+          </div>
+        </div>
+      </section>
 
+      <!-- Rates -->
+      <section id="rates" class="card" style="margin-top:16px">
+        <strong>Rates</strong>
+        <div class="rates" style="margin-top:10px">
+          <div class="rate">
+            <h4>Within Bulacan</h4>
+            <div class="price">₱1,899 / day</div>
+            <div class="note">Unlimited mileage • Discount for 2+ days</div>
+          </div>
+          <div class="rate">
+            <h4>Outside Bulacan</h4>
+            <div class="price">₱2,299 / day</div>
+            <div class="note">Unlimited mileage • Discount for 2+ days</div>
+          </div>
+        </div>
+      </section>
 
-</body></html>
+      <!-- Contact -->
+      <section id="contact" class="card" style="margin-top:16px">
+        <strong>Contact & Booking</strong>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px">
+          <div>
+            <p>📞 <strong>0912 345 6789</strong><br/>📩 easydrive@gmail.com<br/>📍 Matimbo, Malolos, Bulacan</p>
+            <div class="cta">
+              <a class="btn" href="https://m.me/" target="_blank" rel="noreferrer">Message on Facebook</a>
+              <a class="btn secondary" href="tel:09123456789">Call Now</a>
+            </div>
+          </div>
+          <div>
+            <!-- Replace src with your actual Google Maps embed link if you have one -->
+            <iframe title="Map" style="width:100%;height:220px;border:1px solid var(--muted);border-radius:12px" loading="lazy" allowfullscreen src="https://www.google.com/maps?q=Matimbo,+Malolos,+Bulacan&output=embed"></iframe>
+          </div>
+        </div>
+      </section>
+
+      <p style="color:var(--sub);font-size:12px;margin-top:14px">Tip: Palitan ang mga sample data (income, bookings, contact number) ayon sa tunay na info mo. I-upload din ang <code>logo.png</code> at <code>vios.jpg</code> sa repository para lumabas ang images.</p>
+
+    </main>
+  </div>
+</body>
+</html>
