@@ -1,296 +1,283 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>EasyDrive by Micah • Dashboard</title>
-  <style>
-    :root{
-      --bg:#0b0b0b;        /* near-black */
-      --panel:#121316;     /* dark panel */
-      --muted:#1b1d22;     /* subtle borders */
-      --txt:#f6f7fb;       /* white text */
-      --sub:#c9cbd3;       /* light text */
-      --accent:#e11d2e;    /* red */
-      --accent-2:#ff4d61;  /* lighter red */
-      --ok:#22c55e;        /* status: completed */
-      --warn:#eab308;      /* status: upcoming */
-      --bad:#ef4444;       /* status: cancelled */
-    }
-    *{box-sizing:border-box}
-    html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyDrive Admin Dashboard</title>
+<!-- Include CDN libraries -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<style>
+    body { font-family: Arial, sans-serif; margin: 0; display: flex; background: #f4f4f4; }
+    .sidebar { width: 280px; background: #2c3e50; color: white; height: 100vh; padding: 20px; box-sizing: border-box; }
+    .sidebar h2 { margin-top: 0; }
+    .sidebar section { margin-bottom: 30px; }
+    .sidebar section h3 { font-size: 16px; margin-bottom: 10px; }
+    .sidebar .panel { background: #34495e; padding: 10px; border-radius: 5px; }
 
-    /* Layout */
-    .app{display:grid;grid-template-columns:280px 1fr;min-height:100dvh}
-    aside{background:var(--panel);border-right:1px solid var(--muted);display:flex;flex-direction:column}
-    main{padding:20px 24px 40px;}
+    .main { flex: 1; padding: 20px; overflow-y: scroll; }
+    .metrics { display: flex; gap: 20px; margin-bottom: 20px; }
+    .card { background: white; padding: 20px; border-radius: 5px; flex: 1; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .card h3 { margin: 0; font-size: 16px; }
+    .card p { font-size: 24px; margin-top: 10px; }
 
-    /* Sidebar */
-    .brand{display:flex;align-items:center;gap:12px;padding:18px 16px;border-bottom:1px solid var(--muted)}
-    .brand img{width:44px;height:44px;border-radius:999px;object-fit:cover;border:2px solid var(--accent)}
-    .brand h1{font-size:18px;margin:0;line-height:1.1}
-    .slogan{font-size:12px;color:var(--sub);margin-top:3px}
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #2980b9; color: white; }
+    tr.completed { background: #d4edda; }
+    tr.upcoming { background: #d1ecf1; }
+    tr.cancelled { background: #f8d7da; }
 
-    .nav{display:flex;flex-direction:column;padding:12px}
-    .nav a{display:flex;align-items:center;gap:10px;color:var(--sub);text-decoration:none;padding:10px 12px;border-radius:10px}
-    .nav a:hover,.nav a.active{background:linear-gradient(90deg, rgba(225,29,46,.18), transparent);color:var(--txt)}
+    .calendar { margin-top: 20px; background: white; padding: 20px; border-radius: 5px; }
+    .booking-actions button { margin-right: 5px; }
 
-    /* Topbar title */
-    .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-    .top h2{margin:0;font-size:24px;font-weight:700}
-
-    /* Cards grid */
-    .grid{display:grid;gap:16px}
-    .grid.cols-3{grid-template-columns:repeat(3, minmax(0,1fr))}
-    .grid.cols-2{grid-template-columns:repeat(2, minmax(0,1fr))}
-
-    .card{background:var(--panel);border:1px solid var(--muted);border-radius:16px;padding:16px}
-    .stat{display:flex;align-items:center;gap:12px}
-    .stat i{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--accent);}
-    .stat .label{color:var(--sub);font-size:13px}
-    .stat .value{font-size:22px;font-weight:800}
-
-    /* Simple bar chart using CSS only */
-    .bars{display:grid;grid-auto-flow:column;gap:10px;align-items:end;height:180px;margin-top:8px}
-    .bar{background:linear-gradient(180deg,var(--accent-2),var(--accent));width:28px;border-radius:8px 8px 4px 4px}
-    .bar small{display:block;text-align:center;margin-top:6px;color:var(--sub)}
-    .bar-wrap{display:flex;flex-direction:column;align-items:center}
-
-    /* Donut chart (SVG) – for Bookings by Vehicle (single Vios for now) */
-    .donut{display:grid;place-items:center;}
-    .legend{display:grid;gap:8px;margin-top:8px}
-    .legend span{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--sub)}
-    .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
-
-    /* Table */
-    table{width:100%;border-collapse:collapse;margin-top:8px}
-    th,td{padding:12px;border-bottom:1px solid var(--muted);text-align:left;font-size:14px}
-    th{color:var(--sub);font-weight:600}
-    .badge{padding:6px 10px;border-radius:999px;font-size:12px;display:inline-block}
-    .b-ok{background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.35)}
-    .b-warn{background:rgba(234,179,8,.15);color:#fde68a;border:1px solid rgba(234,179,8,.35)}
-    .b-bad{background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.35)}
-
-    /* Rates cards */
-    .rates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-    .rate{background:linear-gradient(180deg,#1a1b20,#121316);border:1px solid var(--muted);border-radius:14px;padding:14px}
-    .rate h4{margin:0 0 8px;font-size:16px;color:var(--txt)}
-    .price{font-size:26px;font-weight:800;color:var(--accent)}
-    .note{color:var(--sub);font-size:12px}
-
-    /* CTA */
-    .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
-    .btn{background:var(--accent);color:white;border:0;border-radius:10px;padding:10px 14px;text-decoration:none;font-weight:700}
-    .btn.secondary{background:transparent;border:1px solid var(--muted);color:var(--txt)}
-    .btn:hover{filter:brightness(1.1)}
-
-    /* Responsive */
-    @media (max-width: 960px){
-      .app{grid-template-columns:1fr}
-      aside{position:sticky;top:0;z-index:40}
-      .brand{justify-content:center}
-      .nav{flex-direction:row;flex-wrap:wrap;gap:8px;justify-content:center}
-      .grid.cols-3{grid-template-columns:1fr}
-      .grid.cols-2{grid-template-columns:1fr}
-      .rates{grid-template-columns:1fr}
-    }
-  </style>
+    /* Modals */
+    .modal { display: none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+    .modal-content { background: white; padding: 20px; border-radius: 5px; width: 500px; max-width: 90%; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; }
+    .close { cursor: pointer; }
+</style>
 </head>
 <body>
-  <div class="app">
-    <!-- Sidebar -->
-    <aside>
-      <div class="brand">
-        <!-- Replace logo.png with your actual logo file name in the same folder -->
-        <img src="logo.png" alt="EasyDrive by Micah logo" onerror="this.style.display='none'" />
-        <div>
-          <h1>EasyDrive by Micah</h1>
-          <div class="slogan">Drive More, Spend Less</div>
-        </div>
-      </div>
-      <nav class="nav">
-        <a class="active" href="#">Dashboard</a>
-        <a href="#vehicles">Vehicles</a>
-        <a href="#rates">Rates</a>
-        <a href="#contact">Contact</a>
-      </nav>
-    </aside>
 
-    <!-- Main -->
-    <main>
-      <div class="top">
-        <h2>Dashboard</h2>
-        <div class="cta">
-          <a class="btn" href="#contact">Book Now</a>
-          <a class="btn secondary" href="#rates">View Rates</a>
-        </div>
-      </div>
+<div class="sidebar">
+    <h2>EasyDrive Admin</h2>
 
-      <!-- Stat cards -->
-      <section class="grid cols-3">
-        <div class="card">
-          <div class="stat">
-            <i>📅</i>
-            <div>
-              <div class="label">Total Bookings (month)</div>
-              <div class="value">12</div>
-            </div>
-          </div>
+    <section>
+        <h3>Cash Balances</h3>
+        <div class="panel">
+            <p>CASH: ₱<span id="cashBalance">3436</span></p>
+            <p>BPI: ₱<span id="bpiBalance">9159.33</span></p>
+            <p>GCASH: ₱<span id="gcashBalance">4367.75</span></p>
+            <p>GoTyme: ₱<span id="gotymeBalance">0</span></p>
+            <p><strong>Total: ₱<span id="totalCash">16963.08</span></strong></p>
         </div>
+    </section>
+
+    <section>
+        <h3>Expenses (Car-related)</h3>
+        <div class="panel">
+            <p>Gas: ₱<span id="expenseGas">5000</span></p>
+            <p>Service: ₱<span id="expenseService">3000</span></p>
+            <p>Car Wash: ₱<span id="expenseWash">1000</span></p>
+            <p>Promotions: ₱<span id="expensePromo">500</span></p>
+            <p><strong>Total Expenses: ₱<span id="totalExpenses">9500</span></strong></p>
+        </div>
+    </section>
+
+    <section>
+        <h3>Pending Approvals</h3>
+        <div class="panel" id="pendingApprovalsPanel">
+            <p>No pending approvals.</p>
+        </div>
+    </section>
+</div>
+
+<div class="main">
+
+    <div class="metrics">
         <div class="card">
-          <div class="stat">
-            <i>₱</i>
-            <div>
-              <div class="label">Total Income (month)</div>
-              <div class="value">₱28,788</div>
-            </div>
-          </div>
+            <h3>Total Bookings (Month)</h3>
+            <p id="totalBookings">0</p>
         </div>
         <div class="card">
-          <div class="stat">
-            <i>🚗</i>
-            <div>
-              <div class="label">Vehicles Rented</div>
-              <div class="value">Toyota Vios</div>
-            </div>
-          </div>
+            <h3>Total Income (Month)</h3>
+            <p id="totalIncome">₱0</p>
         </div>
-      </section>
-
-      <!-- Charts row -->
-      <section class="grid cols-2" style="margin-top:16px">
         <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <strong>Monthly Income (₱)</strong>
-            <span style="color:var(--sub);font-size:12px">Sample data</span>
-          </div>
-          <div class="bars">
-            <!-- Adjust the inline height values to match your real income -->
-            <div class="bar-wrap"><div class="bar" style="height:70px"></div><small>Jan</small></div>
-            <div class="bar-wrap"><div class="bar" style="height:90px"></div><small>Feb</small></div>
-            <div class="bar-wrap"><div class="bar" style="height:130px"></div><small>Mar</small></div>
-            <div class="bar-wrap"><div class="bar" style="height:110px"></div><small>Apr</small></div>
-            <div class="bar-wrap"><div class="bar" style="height:150px"></div><small>May</small></div>
-            <div class="bar-wrap"><div class="bar" style="height:120px"></div><small>Jun</small></div>
-            <div class="bar-wrap"><div class="bar" style="height:160px"></div><small>Jul</small></div>
-            <div class="bar-wrap"><div class="bar" style="height:190px"></div><small>Aug</small></div>
-          </div>
+            <h3>Total Expenses (Month)</h3>
+            <p id="totalExpenseMain">₱0</p>
         </div>
-
         <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <strong>Bookings by Vehicle</strong>
-            <span style="color:var(--sub);font-size:12px">Current: Vios only</span>
-          </div>
-          <div class="donut">
-            <!-- Donut chart: single slice for Vios -->
-            <svg width="180" height="180" viewBox="0 0 42 42" role="img" aria-label="Bookings by Vehicle">
-              <circle r="15.915" cx="21" cy="21" fill="transparent" stroke="#2a2d34" stroke-width="7"/>
-              <circle r="15.915" cx="21" cy="21" fill="transparent" stroke="#e11d2e" stroke-width="7" stroke-dasharray="100 0" stroke-dashoffset="25"/>
-            </svg>
-            <div class="legend">
-              <span><span class="dot" style="background:var(--accent)"></span>Toyota Vios (100%)</span>
-            </div>
-          </div>
+            <h3>Vehicles Rented</h3>
+            <p id="vehiclesRented">0</p>
         </div>
-      </section>
+    </div>
 
-      <!-- Recent bookings table -->
-      <section class="card" style="margin-top:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <strong>Recent Bookings</strong>
-          <span style="color:var(--sub);font-size:12px">Sample entries</span>
-        </div>
-        <table>
-          <thead>
+    <div class="card">
+        <h3>Top 5 Most Rented Vehicles</h3>
+        <canvas id="topVehiclesChart"></canvas>
+    </div>
+
+    <table id="recentBookings">
+        <thead>
             <tr>
-              <th>Client Name</th>
-              <th>Vehicle</th>
-              <th>Pickup Date</th>
-              <th>Return Date</th>
-              <th>Status</th>
+                <th>Client Name</th>
+                <th>Vehicle</th>
+                <th>Pickup</th>
+                <th>Return</th>
+                <th>Duration</th>
+                <th>Total Days Rented</th>
+                <th>Status</th>
+                <th>Freebies (Admin Only)</th>
+                <th>Actions</th>
             </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Juan Dela Cruz</td>
-              <td>Toyota Vios</td>
-              <td>Aug 21</td>
-              <td>Aug 23</td>
-              <td><span class="badge b-ok">Completed</span></td>
-            </tr>
-            <tr>
-              <td>Ana Santos</td>
-              <td>Toyota Vios</td>
-              <td>Aug 28</td>
-              <td>Aug 30</td>
-              <td><span class="badge b-warn">Upcoming</span></td>
-            </tr>
-            <tr>
-              <td>Mark Reyes</td>
-              <td>Toyota Vios</td>
-              <td>Aug 10</td>
-              <td>Aug 12</td>
-              <td><span class="badge b-bad">Cancelled</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
 
-      <!-- Vehicles section -->
-      <section id="vehicles" class="card" style="margin-top:16px">
-        <strong>Available Vehicle</strong>
-        <div style="display:grid;grid-template-columns:160px 1fr;gap:16px;margin-top:12px;align-items:center">
-          <img src="vios.jpg" alt="Toyota Vios" style="width:100%;border-radius:12px;border:1px solid var(--muted)" onerror="this.src='https://via.placeholder.com/320x200?text=Toyota+Vios'">
-          <div>
-            <h3 style="margin:0 0 6px">Toyota Vios</h3>
-            <p style="margin:0;color:var(--sub)">Fuel-efficient sedan • Automatic • Aircon • Well-maintained</p>
-            <div class="cta" style="margin-top:10px">
-              <a class="btn" href="#rates">See Rates</a>
-              <a class="btn secondary" href="#contact">Book Now</a>
-            </div>
-          </div>
+    <div class="calendar">
+        <h3>Booking Calendar</h3>
+        <input type="text" id="calendarInput" placeholder="Select Date Range" />
+        <button id="addBookingBtn">Add Booking</button>
+    </div>
+
+</div>
+
+<!-- Booking Modal -->
+<div class="modal" id="bookingModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Add Booking</h3>
+            <span class="close" id="closeModal">&times;</span>
         </div>
-      </section>
-
-      <!-- Rates -->
-      <section id="rates" class="card" style="margin-top:16px">
-        <strong>Rates</strong>
-        <div class="rates" style="margin-top:10px">
-          <div class="rate">
-            <h4>Within Bulacan</h4>
-            <div class="price">₱1,899 / day</div>
-            <div class="note">Unlimited mileage • Discount for 2+ days</div>
-          </div>
-          <div class="rate">
-            <h4>Outside Bulacan</h4>
-            <div class="price">₱2,299 / day</div>
-            <div class="note">Unlimited mileage • Discount for 2+ days</div>
-          </div>
+        <div class="modal-body">
+            <form id="bookingForm">
+                <label>Client Name: <input type="text" id="clientName" required></label><br><br>
+                <label>Vehicle: <input type="text" id="vehicleName" required></label><br><br>
+                <label>Pickup Date & Time: <input type="datetime-local" id="pickupDate" required></label><br><br>
+                <label>Return Date & Time: <input type="datetime-local" id="returnDate" required></label><br><br>
+                <label>Base Rate (₱): <input type="number" id="baseRate" required></label><br><br>
+                <label>Extra Fees (₱): <input type="number" id="extraFees" value="0"></label><br><br>
+                <label>Partner Unit? <input type="checkbox" id="isPartner"></label><br><br>
+                <button type="submit">Save Booking</button>
+            </form>
         </div>
-      </section>
+    </div>
+</div>
 
-      <!-- Contact -->
-      <section id="contact" class="card" style="margin-top:16px">
-        <strong>Contact & Booking</strong>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px">
-          <div>
-            <p>📞 <strong>0912 345 6789</strong><br/>📩 easydrive@gmail.com<br/>📍 Matimbo, Malolos, Bulacan</p>
-            <div class="cta">
-              <a class="btn" href="https://m.me/" target="_blank" rel="noreferrer">Message on Facebook</a>
-              <a class="btn secondary" href="tel:09123456789">Call Now</a>
-            </div>
-          </div>
-          <div>
-            <!-- Replace src with your actual Google Maps embed link if you have one -->
-            <iframe title="Map" style="width:100%;height:220px;border:1px solid var(--muted);border-radius:12px" loading="lazy" allowfullscreen src="https://www.google.com/maps?q=Matimbo,+Malolos,+Bulacan&output=embed"></iframe>
-          </div>
-        </div>
-      </section>
+<script>
+// Sample data storage
+let bookings = [];
+let vehicleUsage = {};
+let vehicleCounts = {};
 
-      <p style="color:var(--sub);font-size:12px;margin-top:14px">Tip: Palitan ang mga sample data (income, bookings, contact number) ayon sa tunay na info mo. I-upload din ang <code>logo.png</code> at <code>vios.jpg</code> sa repository para lumabas ang images.</p>
+// Cash & Expenses
+let totalExpenses = 9500;
+let totalIncome = 0;
 
-    </main>
-  </div>
+function updateMetrics() {
+    document.getElementById('totalBookings').innerText = bookings.length;
+    document.getElementById('totalIncome').innerText = '₱' + totalIncome.toFixed(2);
+    document.getElementById('totalExpenseMain').innerText = '₱' + totalExpenses.toFixed(2);
+
+    let rentedVehicles = bookings.filter(b => b.status !== 'Cancelled').length;
+    document.getElementById('vehiclesRented').innerText = rentedVehicles;
+
+    // Update Top 5 Vehicles
+    vehicleCounts = {};
+    bookings.forEach(b => {
+        if(b.status !== 'Cancelled') {
+            vehicleCounts[b.vehicle] = (vehicleCounts[b.vehicle] || 0) + 1;
+        }
+    });
+    let sortedVehicles = Object.entries(vehicleCounts).sort((a,b) => b[1]-a[1]).slice(0,5);
+    let labels = sortedVehicles.map(v => v[0]);
+    let data = sortedVehicles.map(v => v[1]);
+
+    topVehiclesChart.data.labels = labels;
+    topVehiclesChart.data.datasets[0].data = data;
+    topVehiclesChart.update();
+}
+
+// Freebies logic
+function getFreebie(totalDays){
+    if(totalDays >= 30) return 'T-shirt';
+    if(totalDays >= 15) return 'Payong';
+    if(totalDays >= 7) return 'Tote Bag';
+    if(totalDays >= 1) return 'Keychain';
+    return '';
+}
+
+function refreshBookingsTable(){
+    let tbody = document.querySelector('#recentBookings tbody');
+    tbody.innerHTML = '';
+    bookings.forEach((b,i) => {
+        let tr = document.createElement('tr');
+        tr.className = b.status.toLowerCase();
+        tr.innerHTML = `
+            <td>${b.client}</td>
+            <td>${b.vehicle}</td>
+            <td>${b.pickup}</td>
+            <td>${b.return}</td>
+            <td>${b.duration} hrs</td>
+            <td>${b.totalDays}</td>
+            <td>${b.status}</td>
+            <td>${b.freebie}</td>
+            <td class="booking-actions">
+                <button onclick="approveBooking(${i})">Approve</button>
+                <button onclick="rejectBooking(${i})">Reject</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function approveBooking(index){
+    bookings[index].status = 'Completed';
+    alert(`Booking approved. Freebie: ${bookings[index].freebie || 'None'}`);
+    totalIncome += bookings[index].baseRate + bookings[index].extraFees;
+    updateMetrics();
+    refreshBookingsTable();
+}
+
+function rejectBooking(index){
+    bookings[index].status = 'Cancelled';
+    alert('Booking rejected.');
+    updateMetrics();
+    refreshBookingsTable();
+}
+
+// Top 5 Pie Chart
+const ctx = document.getElementById('topVehiclesChart').getContext('2d');
+const topVehiclesChart = new Chart(ctx, {
+    type: 'pie',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Top 5 Vehicles',
+            data: [],
+            backgroundColor: ['#3498db','#e74c3c','#f1c40f','#2ecc71','#9b59b6']
+        }]
+    },
+    options: { responsive: true }
+});
+
+// Booking Modal Logic
+const modal = document.getElementById('bookingModal');
+const addBtn = document.getElementById('addBookingBtn');
+const closeModal = document.getElementById('closeModal');
+addBtn.onclick = ()=>{ modal.style.display='flex'; }
+closeModal.onclick = ()=>{ modal.style.display='none'; }
+window.onclick = (e)=>{ if(e.target==modal) modal.style.display='none'; }
+
+// Booking Form Submission
+document.getElementById('bookingForm').onsubmit = function(e){
+    e.preventDefault();
+    let client = document.getElementById('clientName').value;
+    let vehicle = document.getElementById('vehicleName').value;
+    let pickup = document.getElementById('pickupDate').value;
+    let ret = document.getElementById('returnDate').value;
+    let baseRate = parseFloat(document.getElementById('baseRate').value);
+    let extraFees = parseFloat(document.getElementById('extraFees').value);
+    let isPartner = document.getElementById('isPartner').checked;
+
+    let duration = (new Date(ret) - new Date(pickup)) / (1000*60*60); // hours
+    let totalDays = Math.ceil(duration/24);
+    let freebie = getFreebie(totalDays);
+
+    bookings.push({client, vehicle, pickup, return: ret, baseRate, extraFees, status:'Upcoming', duration, totalDays, freebie, isPartner});
+    modal.style.display='none';
+
+    refreshBookingsTable();
+    updateMetrics();
+}
+
+// Initialize Flatpickr
+flatpickr('#calendarInput', {mode:'range'});
+</script>
+
 </body>
 </html>
