@@ -90,19 +90,15 @@ button{padding:4px 8px;border:none;border-radius:3px;cursor:pointer;margin:2px;}
 </div>
 
 <script>
-// ==== Data ====
+// ==== Data Persistence ====
 let users = JSON.parse(localStorage.getItem('users'))||[];
 let currentUser = null;
 let currentRole = "";
-let bookingsData = [
-{client:"Juan Dela Cruz", vehicle:"Toyota Vios", plate:"ABC123", pickUp:"2025-08-16 09:00", return:"2025-08-17 09:00", duration:1, status:"Pending"},
-{client:"Maria Santos", vehicle:"Honda City", plate:"XYZ789", pickUp:"2025-08-17 10:00", return:"2025-08-18 10:00", duration:1, status:"Approved"},
-];
-let vehicleData = [];
-let incomeData = [{cash:1000,bpi:2000,gcash:500,deliveryFee:100,carWash:50,fuelDeficit:0,reservationFee:0,deposit:0}];
-let expensesData = [{cash:200,bpi:300,gcash:100,category:"Maintenance",description:"Car wash"}];
-let cashflowData = [{RFID:0,reservationFee:0,deposit:0,cash:0,bpi:0,gcash:0}];
-let cashRecords = {cash:0,bpi:0,gcash:0,gotyme:0,maya:0,landbank:0};
+let bookingsData = JSON.parse(localStorage.getItem('bookingsData'))||[];
+let vehicleData = JSON.parse(localStorage.getItem('vehicleData'))||[];
+let incomeData = JSON.parse(localStorage.getItem('incomeData'))||[];
+let expensesData = JSON.parse(localStorage.getItem('expensesData'))||[];
+let cashRecords = JSON.parse(localStorage.getItem('cashRecords'))||{cash:0,bpi:0,gcash:0,gotyme:0,maya:0,landbank:0};
 
 // ==== Screens ====
 function showLogin(){document.getElementById('signupScreen').style.display='none'; document.getElementById('loginScreen').style.display='flex';}
@@ -138,7 +134,8 @@ document.getElementById('mainPanel').style.display='flex';
 document.getElementById('userName').innerText="Welcome, "+user.name;
 loadSidebar(role);
 if(role==="admin") loadAdminDashboard();
-else mainContent.innerHTML=`<h2>${role} Dashboard</h2><p>Edit info here...</p>`;
+else if(role==="partner") loadPartnerDashboard();
+else loadClientDashboard();
 }
 
 // ==== Logout ====
@@ -164,32 +161,93 @@ function loadSidebar(role){
 // ==== Admin Dashboard ====
 function loadAdminDashboard(){
 let html=`<h2>Admin Dashboard</h2>`;
-// Recent Bookings Table
+// Bookings Table
 html+=`<h3>Recent Bookings</h3>
 <table id="bookingsTable">
-<tr><th>Client</th><th>Vehicle</th><th>Plate</th><th>Pick-Up</th><th>Return</th><th>Duration</th><th>Status</th></tr>`;
-bookingsData.forEach(b=>{
-html+=`<tr contenteditable="true" class="status-${b.status}">
-<td>${b.client}</td><td>${b.vehicle}</td><td>${b.plate}</td>
-<td>${b.pickUp}</td><td>${b.return}</td><td>${b.duration}</td><td>${b.status}</td></tr>`;
+<tr><th>Client</th><th>Vehicle</th><th>Pick-Up</th><th>Return</th><th>Duration</th><th>Status</th></tr>`;
+bookingsData.forEach((b,i)=>{
+html+=`<tr>
+<td>${b.client}</td>
+<td>${b.vehicle}</td>
+<td>${b.pickUp}</td>
+<td>${b.return}</td>
+<td>${b.duration}</td>
+<td>
+<select onchange="updateBookingStatus(${i},this.value)">
+<option value="Pending" ${b.status==='Pending'?'selected':''}>Pending</option>
+<option value="Approved" ${b.status==='Approved'?'selected':''}>Approved</option>
+<option value="Completed" ${b.status==='Completed'?'selected':''}>Completed</option>
+<option value="Rejected" ${b.status==='Rejected'?'selected':''}>Rejected</option>
+</select>
+</td>
+</tr>`;
 });
 html+=`</table><button onclick="exportCSV('bookings')">Export Bookings CSV</button>`;
+
+// Vehicles Table
+html+=`<h3>Vehicles</h3>
+<table id="vehiclesTable">
+<tr><th>Name/Model</th><th>Plate</th><th>Year</th></tr>`;
+vehicleData.forEach(v=>{
+html+=`<tr><td>${v.name}</td><td>${v.plate}</td><td>${v.year}</td></tr>`;
+});
+html+=`</table>`;
+
+// Income Table
+html+=`<h3>Income</h3>
+<table id="incomeTable"><tr><th>Cash</th><th>BPI</th><th>Gcash</th><th>DeliveryFee</th><th>CarWash</th><th>FuelDeficit</th><th>ReservationFee</th><th>Deposit</th></tr>`;
+incomeData.forEach(i=>{
+html+=`<tr>
+<td>${i.cash||0}</td><td>${i.bpi||0}</td><td>${i.gcash||0}</td>
+<td>${i.deliveryFee||0}</td><td>${i.carWash||0}</td><td>${i.fuelDeficit||0}</td>
+<td>${i.reservationFee||0}</td><td>${i.deposit||0}</td>
+</tr>`;
+});
+html+=`</table>`;
+
+// Expenses Table
+html+=`<h3>Expenses</h3>
+<table id="expensesTable"><tr><th>Cash</th><th>BPI</th><th>Gcash</th><th>Category</th><th>Description</th></tr>`;
+expensesData.forEach(e=>{
+html+=`<tr>
+<td>${e.cash||0}</td><td>${e.bpi||0}</td><td>${e.gcash||0}</td>
+<td>${e.category||''}</td><td>${e.description||''}</td>
+</tr>`;
+});
+html+=`</table>`;
+
+// Net Cashflow
+html+=`<h3>Net Cashflow</h3>
+<p>Total Income: ₱${calculateTotalIncome()}</p>
+<p>Total Expenses: ₱${calculateTotalExpenses()}</p>
+<p>Net Revenue: ₱${calculateTotalIncome()-calculateTotalExpenses()}</p>`;
+
+// Cash Records
+html+=`<h3>Cash Records</h3>
+<table id="cashRecordsTable"><tr><th>Cash</th><th>BPI</th><th>Gcash</th><th>Gotyme</th><th>Maya</th><th>Landbank</th></tr>
+<tr><td>${cashRecords.cash}</td><td>${cashRecords.bpi}</td><td>${cashRecords.gcash}</td><td>${cashRecords.gotyme}</td><td>${cashRecords.maya}</td><td>${cashRecords.landbank}</td></tr></table>`;
+
 mainContent.innerHTML=html;
+updateTotals();
+}
+
+// ==== Update Booking Status ====
+function updateBookingStatus(index,value){
+bookingsData[index].status=value;
+localStorage.setItem('bookingsData',JSON.stringify(bookingsData));
 updateTotals();
 }
 
 // ==== Add Vehicle ====
 function loadAddVehicle(){
-mainContent.innerHTML=`
-<h2>Add Vehicle</h2>
+let html=`<h2>Add Vehicle</h2>
 <input type="text" id="vehicleName" placeholder="Vehicle Name/Model">
 <input type="text" id="vehiclePlate" placeholder="Plate Number">
 <input type="text" id="vehicleYear" placeholder="Year">
 <button onclick="addVehicle()">Add Vehicle</button>
 <h3>Current Vehicles</h3>
-<table id="vehiclesTable">
-<tr><th>Name/Model</th><th>Plate</th><th>Year</th></tr>
-</table>`;
+<table id="vehiclesTable"><tr><th>Name/Model</th><th>Plate</th><th>Year</th></tr></table>`;
+mainContent.innerHTML=html;
 updateVehiclesTable();
 }
 
@@ -199,6 +257,7 @@ const plate=document.getElementById('vehiclePlate').value.trim();
 const year=document.getElementById('vehicleYear').value.trim();
 if(!name||!plate||!year){alert("All fields required"); return;}
 vehicleData.push({name, plate, year});
+localStorage.setItem('vehicleData',JSON.stringify(vehicleData));
 alert("Vehicle added successfully!");
 document.getElementById('vehicleName').value="";
 document.getElementById('vehiclePlate').value="";
@@ -216,6 +275,55 @@ table.appendChild(tr);
 });
 }
 
+// ==== Partner Dashboard ====
+function loadPartnerDashboard(){
+let html=`<h2>Partner Dashboard</h2><h3>My Trips</h3>
+<table><tr><th>Client</th><th>Vehicle</th><th>Pick-Up</th><th>Return</th><th>Status</th></tr>`;
+bookingsData.forEach(b=>{
+html+=`<tr>
+<td>${b.client}</td><td>${b.vehicle}</td><td>${b.pickUp}</td><td>${b.return}</td><td>${b.status}</td>
+</tr>`;
+});
+html+=`</table>`;
+mainContent.innerHTML=html;
+}
+
+// ==== Client Dashboard ====
+function loadClientDashboard(){
+let html=`<h2>Client Dashboard</h2>
+<h3>Create Booking</h3>
+<input type="text" id="bookingVehicle" placeholder="Vehicle">
+<input type="datetime-local" id="bookingPickUp">
+<input type="datetime-local" id="bookingReturn">
+<button onclick="addBooking()">Book Now</button>
+<h3>My Bookings</h3>
+<table id="clientBookingsTable"><tr><th>Vehicle</th><th>Pick-Up</th><th>Return</th><th>Status</th></tr></table>`;
+mainContent.innerHTML=html;
+updateClientBookingsTable();
+}
+
+function addBooking(){
+const vehicle=document.getElementById('bookingVehicle').value.trim();
+const pickUp=document.getElementById('bookingPickUp').value;
+const returnTime=document.getElementById('bookingReturn').value;
+if(!vehicle||!pickUp||!returnTime){alert("All fields required"); return;}
+const duration=(new Date(returnTime)-new Date(pickUp))/(1000*60*60);
+bookingsData.push({client:currentUser.name, vehicle, pickUp, return:returnTime, duration, status:"Pending"});
+localStorage.setItem('bookingsData',JSON.stringify(bookingsData));
+alert("Booking created!");
+updateClientBookingsTable();
+}
+
+function updateClientBookingsTable(){
+const table=document.getElementById('clientBookingsTable');
+table.innerHTML=`<tr><th>Vehicle</th><th>Pick-Up</th><th>Return</th><th>Status</th></tr>`;
+bookingsData.filter(b=>b.client===currentUser.name).forEach(b=>{
+const tr=document.createElement('tr');
+tr.innerHTML=`<td>${b.vehicle}</td><td>${b.pickUp}</td><td>${b.return}</td><td>${b.status}</td>`;
+table.appendChild(tr);
+});
+}
+
 // ==== Load Content ====
 const mainContent=document.getElementById('mainContent');
 function loadContent(item){
@@ -225,30 +333,35 @@ if(item==="Dashboard"){loadAdminDashboard(); return;}
 if(item==="Add Vehicle"){loadAddVehicle(); return;}
 mainContent.innerHTML=`<h2>${item}</h2><p contenteditable="true">Edit ${item} info here...</p>`;
 }
-else mainContent.innerHTML=`<h2>${item}</h2><p contenteditable="true">Edit ${item} info here...</p>`;
+else if(currentRole==="partner"){loadPartnerDashboard();}
+else{loadClientDashboard();}
 }
 
-// ==== Update Totals and Cash Records ====
+// ==== Totals ====
+function calculateTotalIncome(){
+return incomeData.reduce((sum,i)=>sum+(parseFloat(i.cash||0)+parseFloat(i.bpi||0)+parseFloat(i.gcash||0)+parseFloat(i.deliveryFee||0)+parseFloat(i.carWash||0)+parseFloat(i.fuelDeficit||0)+parseFloat(i.reservationFee||0)+parseFloat(i.deposit||0)),0);
+}
+function calculateTotalExpenses(){
+return expensesData.reduce((sum,e)=>sum+(parseFloat(e.cash||0)+parseFloat(e.bpi||0)+parseFloat(e.gcash||0)),0);
+}
 function updateTotals(){
-const totalIncome = incomeData.reduce((sum,i)=>sum+Object.values(i).reduce((a,b)=>a+(parseFloat(b)||0),0),0);
-const totalExpenses = expensesData.reduce((sum,e)=>sum+Object.values(e).reduce((a,b)=>a+(parseFloat(b)||0),0),0);
-const netRevenue = totalIncome - totalExpenses;
-document.getElementById('adminStats').innerHTML=`
-<div>Total Bookings: ${bookingsData.length}</div>
-<div>Vehicles Rented: ${new Set(bookingsData.map(b=>b.vehicle)).size}</div>
-<div>Total Income: ₱${totalIncome}</div>
-<div>Total Expenses: ₱${totalExpenses}</div>
-<div>Net Revenue: ₱${netRevenue}</div>
-`;
-// Update Cash Records demo
-cashRecords.cash = totalIncome - totalExpenses;
-cashRecords.bpi = totalIncome/2;
-cashRecords.gcash = totalIncome/2;
-cashRecords.gotyme = 0; cashRecords.maya=0; cashRecords.landbank=0;
+cashRecords.cash = calculateTotalIncome()-calculateTotalExpenses();
+cashRecords.bpi = calculateTotalIncome()/2;
+cashRecords.gcash = calculateTotalIncome()/2;
+localStorage.setItem('cashRecords',JSON.stringify(cashRecords));
 }
 
-// ==== Export CSV ====
-function exportCSV(type){alert("Export CSV: "+type+" (implement as needed)");}
+// ==== CSV Export ====
+function exportCSV(type){
+let csv="";
+if(type==="bookings"){
+csv="Client,Vehicle,Pick-Up,Return,Duration,Status\n";
+bookingsData.forEach(b=>{csv+=`${b.client},${b.vehicle},${b.pickUp},${b.return},${b.duration},${b.status}\n`;});
+}
+const blob=new Blob([csv],{type:'text/csv'});
+const url=URL.createObjectURL(blob);
+const a=document.createElement('a'); a.href=url; a.download=type+'.csv'; a.click();
+}
 
 // ==== Change Logo ====
 function changeLogo(){let url=prompt("Enter new logo URL"); if(url) document.getElementById('logo').src=url;}
