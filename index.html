@@ -4,230 +4,222 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EasyDrive Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-  body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f4f4;}
-  .navbar { background:#004080; color:white; padding:10px; display:flex; justify-content:space-between; align-items:center;}
-  .sidebar { width:250px; background:#fff; height:100vh; position:fixed; top:0; left:0; padding:20px; box-shadow:2px 0 5px rgba(0,0,0,0.1);}
-  .main { margin-left:270px; padding:20px;}
-  .card { background:white; padding:15px; margin-bottom:15px; box-shadow:0 2px 5px rgba(0,0,0,0.1);}
-  table { width:100%; border-collapse:collapse; margin-top:10px;}
-  th, td { border:1px solid #ddd; padding:8px; text-align:left;}
-  th { background:#004080; color:white;}
-  .green { color:green; font-weight:bold;}
-  .blue { color:#1e90ff; font-weight:bold;}
-  .red { color:red; font-weight:bold;}
-  .hidden { display:none; }
-  .role-select { margin:20px;}
-  button { padding:5px 10px; margin-right:5px; cursor:pointer;}
+    * { box-sizing: border-box; margin:0; padding:0; font-family: Arial, sans-serif; }
+    body { display: flex; min-height: 100vh; }
+    
+    /* Sidebar */
+    .sidebar { width: 220px; background-color: #2c3e50; color: #ecf0f1; flex-shrink: 0; }
+    .sidebar h2 { text-align: center; padding: 20px 0; font-size: 18px; }
+    .sidebar ul { list-style: none; padding: 0; }
+    .sidebar li { padding: 12px 20px; cursor: pointer; display: flex; align-items: center; }
+    .sidebar li:hover { background-color: #34495e; }
+    
+    /* Main content */
+    .main { flex: 1; background-color: #ecf0f1; display: flex; flex-direction: column; }
+    
+    /* Header */
+    .header { height: 60px; background-color: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);}
+    .header .logo { display: flex; align-items: center; }
+    .header .logo img { height: 40px; margin-right: 10px; }
+    .header .stats { display: flex; gap: 10px; }
+    .header .stats div { background: #3498db; color: #fff; padding: 5px 10px; border-radius: 5px; font-size: 14px; }
+    
+    /* Content */
+    .content { flex: 1; padding: 20px; overflow-y: auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 10px; border: 1px solid #bdc3c7; text-align: left; }
+    th { background-color: #3498db; color: #fff; }
+    
+    /* Buttons */
+    button { padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; }
+    .approve { background-color: #27ae60; color: #fff; }
+    .reject { background-color: #c0392b; color: #fff; }
+    
+    /* Responsive */
+    @media(max-width:768px){
+        .sidebar { width: 60px; }
+        .sidebar li { font-size: 12px; padding: 10px 10px; }
+        .header .stats { display: none; }
+    }
 </style>
 </head>
 <body>
 
-<div class="role-select">
-  <label>Select Role: </label>
-  <select id="roleSelect">
-    <option value="">-- Choose Role --</option>
-    <option value="admin">Admin</option>
-    <option value="client">Client</option>
-    <option value="partner">Partner</option>
-  </select>
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+    <h2>EasyDrive</h2>
+    <ul id="menu">
+        <!-- Menu items will be injected by JS based on role -->
+    </ul>
 </div>
 
-<!-- Admin / Partner / Client Panels -->
-<div id="dashboardPanel" class="hidden">
-  <div class="navbar">
-    <div>EasyDrive Dashboard</div>
-    <div id="currentRole"></div>
-  </div>
-
-  <div class="sidebar">
-    <h3>Quick Stats</h3>
-    <div>Total Income: ₱<span id="totalIncome">0</span></div>
-    <div>Total Expense: ₱<span id="totalExpense">0</span></div>
-    <div>Active Bookings: <span id="activeBookings">0</span></div>
-    <div>Partner Applications: <span id="pendingPartners">0</span></div>
-  </div>
-
-  <div class="main">
-    <div class="card">
-      <h3>Top 5 Most Rented Vehicles</h3>
-      <canvas id="topVehiclesChart" height="200"></canvas>
+<!-- Main Panel -->
+<div class="main">
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">
+            <img src="https://via.placeholder.com/40" alt="Logo">
+            <span id="roleTitle">Dashboard</span>
+        </div>
+        <div class="stats" id="adminStats">
+            <!-- Only admin stats -->
+        </div>
+        <div>
+            <span id="userName">Welcome, User</span>
+            <button onclick="logout()">Logout</button>
+        </div>
     </div>
 
-    <div class="card">
-      <h3>Recent Bookings</h3>
-      <table id="bookingsTable">
-        <thead>
-          <tr>
-            <th>Client Name</th>
-            <th>Vehicle</th>
-            <th>Pickup</th>
-            <th>Return</th>
-            <th>Duration</th>
-            <th>Total Days Rented</th>
-            <th>Status</th>
-            <th class="admin-only">Freebies</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+    <!-- Content -->
+    <div class="content" id="mainContent">
+        <!-- Main content injected by JS -->
     </div>
-
-    <div class="card client-only">
-      <h3>Book a Vehicle</h3>
-      <form id="bookingForm">
-        <label>Client Name:</label><br>
-        <input type="text" id="clientName" required><br>
-        <label>Vehicle:</label><br>
-        <select id="vehicleSelect"></select><br>
-        <label>Pickup Date:</label><br>
-        <input type="date" id="pickupDate" required><br>
-        <label>Return Date:</label><br>
-        <input type="date" id="returnDate" required><br>
-        <button type="submit">Submit Booking</button>
-      </form>
-    </div>
-
-    <div class="card partner-only">
-      <h3>Submit Your Vehicle</h3>
-      <form id="partnerForm">
-        <label>Vehicle Name/Model:</label><br>
-        <input type="text" id="partnerVehicle" required><br>
-        <label>Plate Number:</label><br>
-        <input type="text" id="partnerPlate" required><br>
-        <button type="submit">Submit Vehicle</button>
-      </form>
-    </div>
-
-  </div>
 </div>
 
 <script>
-const roleSelect = document.getElementById('roleSelect');
-const dashboardPanel = document.getElementById('dashboardPanel');
-const currentRole = document.getElementById('currentRole');
+    // User role: "admin", "client", "partner" (change for demo)
+    let currentRole = "admin"; // demo: change to "client" or "partner"
+    let userName = "Admin Micah";
 
-let bookings = [];
-let vehicles = [
-  {name:'Toyota Vios', plate:'ABC123', rented:3},
-  {name:'Honda City', plate:'DEF456', rented:5},
-  {name:'Toyota Avanza', plate:'GHI789', rented:2},
-  {name:'Mitsubishi Montero', plate:'JKL012', rented:1},
-  {name:'Suzuki Ertiga', plate:'MNO345', rented:4},
-];
-let partners = [];
-let totalIncome = 0;
-let totalExpense = 0;
+    document.getElementById('userName').innerText = "Welcome, " + userName;
 
-roleSelect.addEventListener('change', ()=>{
-  const role = roleSelect.value;
-  if(!role) { dashboardPanel.classList.add('hidden'); return; }
-  dashboardPanel.classList.remove('hidden');
-  currentRole.innerText = role.toUpperCase();
+    const sidebarMenu = document.getElementById('menu');
+    const mainContent = document.getElementById('mainContent');
+    const adminStats = document.getElementById('adminStats');
 
-  // Show/hide sections
-  document.querySelectorAll('.client-only').forEach(e=>e.style.display=(role==='client'?'block':'none'));
-  document.querySelectorAll('.partner-only').forEach(e=>e.style.display=(role==='partner'?'block':'none'));
-  document.querySelectorAll('.admin-only').forEach(e=>e.style.display=(role==='admin'?'table-cell':'none'));
+    // Menu and stats based on role
+    const menus = {
+        admin: ["Dashboard", "Bookings", "Clients", "Partners", "Income", "Expenses", "Reports", "Settings", "Map", "Facebook", "TikTok"],
+        client: ["Dashboard", "My Bookings", "Billing / Invoice", "Profile", "Map", "Facebook", "TikTok"],
+        partner: ["Dashboard", "My Trips", "Earnings / Payment History", "Profile", "Map", "Facebook", "TikTok"]
+    };
 
-  updateDashboard();
-});
+    const statsData = {
+        totalBookings: 24,
+        income: "₱120,000",
+        expenses: "₱40,000",
+        tripsPending: 5,
+        tripsInProgress: 3,
+        tripsCompleted: 16
+    };
 
-function updateDashboard(){
-  // Stats
-  totalIncome = bookings.reduce((sum,b)=>sum+b.amount,0);
-  totalExpense = bookings.reduce((sum,b)=>sum+b.expense,0);
-  document.getElementById('totalIncome').innerText = totalIncome;
-  document.getElementById('totalExpense').innerText = totalExpense;
-  document.getElementById('activeBookings').innerText = bookings.filter(b=>b.status==='Upcoming').length;
-  document.getElementById('pendingPartners').innerText = partners.filter(p=>!p.approved).length;
+    function loadSidebar(role){
+        sidebarMenu.innerHTML = "";
+        menus[role].forEach(item => {
+            const li = document.createElement('li');
+            li.innerText = item;
+            li.onclick = () => loadContent(item);
+            sidebarMenu.appendChild(li);
+        });
+    }
 
-  // Top Vehicles Pie Chart
-  const ctx = document.getElementById('topVehiclesChart').getContext('2d');
-  const sorted = vehicles.sort((a,b)=>b.rented-a.rented).slice(0,5);
-  const data = {
-    labels: sorted.map(v=>v.name),
-    datasets:[{
-      data: sorted.map(v=>v.rented),
-      backgroundColor:['#004080','#1e90ff','#ff8c00','#32cd32','#ff1493']
-    }]
-  };
-  if(window.vehicleChart) window.vehicleChart.destroy();
-  window.vehicleChart = new Chart(ctx,{type:'pie',data:data});
+    function loadStats(role){
+        if(role === "admin"){
+            adminStats.innerHTML = `
+                <div>Total Bookings: ${statsData.totalBookings}</div>
+                <div>Income: ${statsData.income}</div>
+                <div>Expenses: ${statsData.expenses}</div>
+            `;
+        } else {
+            adminStats.innerHTML = "";
+        }
+    }
 
-  // Bookings Table
-  const tbody = document.querySelector('#bookingsTable tbody');
-  tbody.innerHTML='';
-  bookings.forEach((b,i)=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`
-      <td>${b.client}</td>
-      <td>${b.vehicle}</td>
-      <td>${b.pickup}</td>
-      <td>${b.return}</td>
-      <td>${b.duration} days</td>
-      <td>${b.totalDays}</td>
-      <td class="${b.status==='Completed'?'green':b.status==='Upcoming'?'blue':'red'}">${b.status}</td>
-      <td class="admin-only">${b.freebie || ''}</td>
-      <td>
-        ${roleSelect.value==='admin'?`<button onclick="approveBooking(${i})">Approve</button><button onclick="rejectBooking(${i})">Reject</button>`:''}
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
+    function loadContent(menuItem){
+        let html = "";
+        if(currentRole === "admin"){
+            if(menuItem === "Dashboard" || menuItem === "Bookings"){
+                html = `
+                <h2>Bookings Overview</h2>
+                <table>
+                    <tr>
+                        <th>Client</th><th>Vehicle</th><th>Schedule</th><th>Status</th><th>Action</th>
+                    </tr>
+                    <tr>
+                        <td>Juan Dela Cruz</td><td>Toyota Vios</td><td>2025-08-16</td><td>Pending</td>
+                        <td>
+                            <button class="approve">Approve</button>
+                            <button class="reject">Reject</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Maria Santos</td><td>Honda City</td><td>2025-08-17</td><td>Approved</td>
+                        <td>
+                            <button class="approve">Approve</button>
+                            <button class="reject">Reject</button>
+                        </td>
+                    </tr>
+                </table>
+                `;
+            } else if(menuItem === "Income"){
+                html = `<h2>Monthly Income</h2><p>Total Income: ${statsData.income}</p>`;
+            } else if(menuItem === "Expenses"){
+                html = `<h2>Monthly Expenses</h2><p>Total Expenses: ${statsData.expenses}</p>`;
+            } else if(menuItem === "Map"){
+                html = `<h2>Our Location</h2>
+                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3857.163892364542!2d120.83534147457674!3d14.816057071766437!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397ab98fa4b41a7%3A0xda1b0d4442efe2c8!2sEasyDrive%20by%20Micah%20-%20Car%20Rental%20Services!5e0!3m2!1sen!2sph!4v1755188772649!5m2!1sen!2sph" width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy"></iframe>`;
+            } else if(menuItem === "Facebook"){
+                html = `<h2>Facebook Page</h2>
+                <a href="https://www.facebook.com/share/14FRBRZUrh5/" target="_blank">Open Facebook Page</a>`;
+            } else if(menuItem === "TikTok"){
+                html = `<h2>TikTok Page</h2>
+                <a href="https://www.tiktok.com/@easydrive.by.micah" target="_blank">Open TikTok Profile</a>`;
+            } else{
+                html = `<h2>${menuItem}</h2><p>Content for ${menuItem}</p>`;
+            }
+        } else if(currentRole === "client"){
+            if(menuItem === "Map"){
+                html = `<h2>Our Location</h2>
+                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3857.163892364542!2d120.83534147457674!3d14.816057071766437!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397ab98fa4b41a7%3A0xda1b0d4442efe2c8!2sEasyDrive%20by%20Micah%20-%20Car%20Rental%20Services!5e0!3m2!1sen!2sph!4v1755188772649!5m2!1sen!2sph" width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy"></iframe>`;
+            } else if(menuItem === "Facebook"){
+                html = `<h2>Facebook Page</h2>
+                <a href="https://www.facebook.com/share/14FRBRZUrh5/" target="_blank">Open Facebook Page</a>`;
+            } else if(menuItem === "TikTok"){
+                html = `<h2>TikTok Page</h2>
+                <a href="https://www.tiktok.com/@easydrive.by.micah" target="_blank">Open TikTok Profile</a>`;
+            } else {
+                html = `
+                <h2>My Bookings</h2>
+                <table>
+                    <tr><th>Vehicle</th><th>Date</th><th>Status</th></tr>
+                    <tr><td>Toyota Vios</td><td>2025-08-16</td><td>Pending</td></tr>
+                    <tr><td>Honda City</td><td>2025-08-17</td><td>Approved</td></tr>
+                </table>
+                `;
+            }
+        } else if(currentRole === "partner"){
+            if(menuItem === "Map"){
+                html = `<h2>Our Location</h2>
+                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3857.163892364542!2d120.83534147457674!3d14.816057071766437!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397ab98fa4b41a7%3A0xda1b0d4442efe2c8!2sEasyDrive%20by%20Micah%20-%20Car%20Rental%20Services!5e0!3m2!1sen!2sph!4v1755188772649!5m2!1sen!2sph" width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy"></iframe>`;
+            } else if(menuItem === "Facebook"){
+                html = `<h2>Facebook Page</h2>
+                <a href="https://www.facebook.com/share/14FRBRZUrh5/" target="_blank">Open Facebook Page</a>`;
+            } else if(menuItem === "TikTok"){
+                html = `<h2>TikTok Page</h2>
+                <a href="https://www.tiktok.com/@easydrive.by.micah" target="_blank">Open TikTok Profile</a>`;
+            } else {
+                html = `
+                <h2>My Assigned Trips</h2>
+                <table>
+                    <tr><th>Client</th><th>Vehicle</th><th>Schedule</th><th>Status</th></tr>
+                    <tr><td>Juan Dela Cruz</td><td>Toyota Vios</td><td>2025-08-16</td><td>In Progress</td></tr>
+                    <tr><td>Maria Santos</td><td>Honda City</td><td>2025-08-17</td><td>Completed</td></tr>
+                </table>
+                `;
+            }
+        }
+        mainContent.innerHTML = html;
+    }
 
-  // Vehicle Select for client
-  const vehicleSelect = document.getElementById('vehicleSelect');
-  vehicleSelect.innerHTML='';
-  vehicles.forEach(v=>{
-    vehicleSelect.innerHTML+=`<option value="${v.name}">${v.name}</option>`;
-  });
-}
+    function logout(){
+        alert("Logout successful!");
+    }
 
-// Booking Form Submission
-document.getElementById('bookingForm')?.addEventListener('submit',(e)=>{
-  e.preventDefault();
-  const client = document.getElementById('clientName').value;
-  const vehicle = document.getElementById('vehicleSelect').value;
-  const pickup = document.getElementById('pickupDate').value;
-  const ret = document.getElementById('returnDate').value;
-  const duration = (new Date(ret)-new Date(pickup))/(1000*60*60*24)+1;
-  const totalDays = duration;
-  let freebie='';
-  if(totalDays>=30) freebie='T-shirt';
-  else if(totalDays>=15) freebie='Payong';
-  else if(totalDays>=7) freebie='Tote Bag';
-  else if(totalDays>=1) freebie='Keychain';
-
-  bookings.push({client,vehicle,pickup,return:ret,duration,totalDays,status:'Upcoming',amount:1000*duration,expense:300*duration,freebie});
-  const v = vehicles.find(vv=>vv.name===vehicle); if(v) v.rented++;
-  updateDashboard();
-  alert('Booking submitted! Waiting for admin approval.');
-});
-
-// Partner Form Submission
-document.getElementById('partnerForm')?.addEventListener('submit',(e)=>{
-  e.preventDefault();
-  const name = document.getElementById('partnerVehicle').value;
-  const plate = document.getElementById('partnerPlate').value;
-  partners.push({name,plate,approved:false});
-  updateDashboard();
-  alert('Partner vehicle submitted! Waiting for admin approval.');
-});
-
-// Admin Approve/Reject
-function approveBooking(i){
-  bookings[i].status='Completed';
-  updateDashboard();
-  alert(`Booking for ${bookings[i].client} approved!`);
-}
-function rejectBooking(i){
-  bookings[i].status='Cancelled';
-  updateDashboard();
-  alert(`Booking for ${bookings[i].client} rejected!`);
-}
+    // Initialize dashboard
+    loadSidebar(currentRole);
+    loadStats(currentRole);
+    loadContent("Dashboard");
 </script>
 
 </body>
