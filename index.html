@@ -30,7 +30,6 @@ button{padding:4px 8px;border:none;border-radius:3px;cursor:pointer;margin:2px;}
 .screen{width:100%;height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;background:#ecf0f1;}
 .screen input,.screen select{padding:8px;margin:5px 0;width:200px;}
 .screen button{margin-top:10px;}
-canvas{background:#fff;border:1px solid #ccc;margin-top:10px;}
 .status-Pending{background:yellow;color:black;}
 .status-Approved{background:green;color:white;}
 .status-Completed{background:blue;color:white;}
@@ -90,7 +89,6 @@ canvas{background:#fff;border:1px solid #ccc;margin-top:10px;}
 <div class="content" id="mainContent"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // ==== Data ====
 let users = JSON.parse(localStorage.getItem('users'))||[];
@@ -106,7 +104,6 @@ let incomeData = [
 let expensesData = [{cash:200,bpi:300,gcash:100,category:"Maintenance",description:"Car wash"}];
 let cashflowData = [{RFID:0,reservationFee:0,deposit:0,cash:0,bpi:0,gcash:0}];
 let cashRecords = {cash:0,bpi:0,gcash:0,gotyme:0,maya:0,landbank:0};
-let pieChart=null;
 
 // ==== Screens ====
 function showLogin(){document.getElementById('signupScreen').style.display='none'; document.getElementById('loginScreen').style.display='flex';}
@@ -164,8 +161,6 @@ menu.appendChild(li);
 // ==== Admin Dashboard ====
 function loadAdminDashboard(){
 let html=`<h2>Admin Dashboard</h2>`;
-// Pie Chart
-html+=`<canvas id="pieChart" width="400" height="200"></canvas>`;
 // Recent Bookings Table
 html+=`<h3>Recent Bookings</h3>
 <table id="bookingsTable">
@@ -177,17 +172,7 @@ html+=`<tr contenteditable="true" class="status-${b.status}">
 });
 html+=`</table><button onclick="exportCSV('bookings')">Export Bookings CSV</button>`;
 mainContent.innerHTML=html;
-renderPieChart();
 updateTotals();
-}
-
-// ==== Pie Chart ====
-function renderPieChart(){
-const ctx=document.getElementById('pieChart').getContext('2d');
-const vehicleCount={};
-bookingsData.forEach(b=>{vehicleCount[b.vehicle]=(vehicleCount[b.vehicle]||0)+1;});
-if(pieChart) pieChart.destroy();
-pieChart=new Chart(ctx,{type:'pie',data:{labels:Object.keys(vehicleCount),datasets:[{data:Object.values(vehicleCount),backgroundColor:['#3498db','#e74c3c','#2ecc71','#f1c40f','#f39c12']}]},options:{responsive:true}});
 }
 
 // ==== Update Totals and Cash Records ====
