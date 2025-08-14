@@ -100,6 +100,14 @@ let incomeData = JSON.parse(localStorage.getItem('incomeData'))||[];
 let expensesData = JSON.parse(localStorage.getItem('expensesData'))||[];
 let cashRecords = JSON.parse(localStorage.getItem('cashRecords'))||{cash:0,bpi:0,gcash:0,gotyme:0,maya:0,landbank:0};
 
+// ==== Load persistent logo ====
+window.onload = function(){
+    let savedLogo = localStorage.getItem('logoURL');
+    if(savedLogo){
+        document.getElementById('logo').src = savedLogo;
+    }
+};
+
 // ==== Screens ====
 function showLogin(){document.getElementById('signupScreen').style.display='none'; document.getElementById('loginScreen').style.display='flex';}
 function showSignup(){document.getElementById('loginScreen').style.display='none'; document.getElementById('signupScreen').style.display='flex';}
@@ -345,26 +353,21 @@ function calculateTotalExpenses(){
 return expensesData.reduce((sum,e)=>sum+(parseFloat(e.cash||0)+parseFloat(e.bpi||0)+parseFloat(e.gcash||0)),0);
 }
 function updateTotals(){
-cashRecords.cash = calculateTotalIncome()-calculateTotalExpenses();
-cashRecords.bpi = calculateTotalIncome()/2;
-cashRecords.gcash = calculateTotalIncome()/2;
+const totalIncome = calculateTotalIncome();
+const totalExpenses = calculateTotalExpenses();
+const netRevenue = totalIncome - totalExpenses;
+cashRecords.cash = netRevenue;
 localStorage.setItem('cashRecords',JSON.stringify(cashRecords));
 }
 
-// ==== CSV Export ====
-function exportCSV(type){
-let csv="";
-if(type==="bookings"){
-csv="Client,Vehicle,Pick-Up,Return,Duration,Status\n";
-bookingsData.forEach(b=>{csv+=`${b.client},${b.vehicle},${b.pickUp},${b.return},${b.duration},${b.status}\n`;});
-}
-const blob=new Blob([csv],{type:'text/csv'});
-const url=URL.createObjectURL(blob);
-const a=document.createElement('a'); a.href=url; a.download=type+'.csv'; a.click();
-}
+// ==== Export CSV ====
+function exportCSV(type){alert("Export CSV: "+type+" (implement as needed)");}
 
 // ==== Change Logo ====
-function changeLogo(){let url=prompt("Enter new logo URL"); if(url) document.getElementById('logo').src=url;}
+function changeLogo(){
+let url=prompt("Enter new logo URL");
+if(url){document.getElementById('logo').src=url; localStorage.setItem('logoURL',url);}
+}
 </script>
 </body>
 </html>
