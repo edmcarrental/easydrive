@@ -5,43 +5,44 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EasyDrive Dashboard</title>
 <style>
-    * { box-sizing: border-box; margin:0; padding:0; font-family: Arial, sans-serif; }
-    body { display: flex; min-height: 100vh; }
-    
-    /* Sidebar */
-    .sidebar { width: 220px; background-color: #2c3e50; color: #ecf0f1; flex-shrink: 0; }
-    .sidebar h2 { text-align: center; padding: 20px 0; font-size: 18px; }
-    .sidebar ul { list-style: none; padding: 0; }
-    .sidebar li { padding: 12px 20px; cursor: pointer; display: flex; align-items: center; }
-    .sidebar li:hover { background-color: #34495e; }
-    
-    /* Main content */
-    .main { flex: 1; background-color: #ecf0f1; display: flex; flex-direction: column; }
-    
-    /* Header */
-    .header { height: 60px; background-color: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);}
-    .header .logo { display: flex; align-items: center; }
-    .header .logo img { height: 40px; margin-right: 10px; }
-    .header .stats { display: flex; gap: 10px; }
-    .header .stats div { background: #3498db; color: #fff; padding: 5px 10px; border-radius: 5px; font-size: 14px; }
-    
-    /* Content */
-    .content { flex: 1; padding: 20px; overflow-y: auto; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { padding: 10px; border: 1px solid #bdc3c7; text-align: left; }
-    th { background-color: #3498db; color: #fff; }
-    
-    /* Buttons */
-    button { padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; }
-    .approve { background-color: #27ae60; color: #fff; }
-    .reject { background-color: #c0392b; color: #fff; }
-    
-    /* Responsive */
-    @media(max-width:768px){
-        .sidebar { width: 60px; }
-        .sidebar li { font-size: 12px; padding: 10px 10px; }
-        .header .stats { display: none; }
-    }
+* { box-sizing: border-box; margin:0; padding:0; font-family: Arial, sans-serif; }
+body { display: flex; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar { width: 220px; background-color: #2c3e50; color: #ecf0f1; flex-shrink: 0; }
+.sidebar h2 { text-align: center; padding: 20px 0; font-size: 18px; }
+.sidebar ul { list-style: none; padding: 0; }
+.sidebar li { padding: 12px 20px; cursor: pointer; display: flex; align-items: center; }
+.sidebar li:hover { background-color: #34495e; }
+
+/* Main content */
+.main { flex: 1; background-color: #ecf0f1; display: flex; flex-direction: column; }
+
+/* Header */
+.header { height: 60px; background-color: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);}
+.header .logo { display: flex; align-items: center; }
+.header .logo img { height: 40px; margin-right: 10px; cursor:pointer; }
+.header .stats { display: flex; gap: 10px; }
+.header .stats div { background: #3498db; color: #fff; padding: 5px 10px; border-radius: 5px; font-size: 14px; }
+
+/* Content */
+.content { flex: 1; padding: 20px; overflow-y: auto; }
+table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size:12px; }
+th, td { padding: 8px; border: 1px solid #bdc3c7; text-align: left; }
+th { background-color: #3498db; color: #fff; }
+
+/* Buttons */
+button { padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; font-size:12px;}
+.approve { background-color: #27ae60; color: #fff; }
+.reject { background-color: #c0392b; color: #fff; }
+
+/* Responsive */
+@media(max-width:768px){
+    .sidebar { width: 60px; }
+    .sidebar li { font-size: 12px; padding: 10px 10px; }
+    .header .stats { display: none; }
+}
+input[type="file"]{ display:none;}
 </style>
 </head>
 <body>
@@ -59,12 +60,11 @@
     <!-- Header -->
     <div class="header">
         <div class="logo">
-            <img src="https://via.placeholder.com/40" alt="Logo">
+            <img id="logo" src="https://via.placeholder.com/40" alt="Logo" title="Click to change logo">
             <span id="roleTitle">Dashboard</span>
+            <input type="file" id="logoInput" accept="image/*">
         </div>
-        <div class="stats" id="adminStats">
-            <!-- Only admin stats -->
-        </div>
+        <div class="stats" id="adminStats"></div>
         <div>
             <span id="userName">Welcome, User</span>
             <button onclick="logout()">Logout</button>
@@ -72,155 +72,163 @@
     </div>
 
     <!-- Content -->
-    <div class="content" id="mainContent">
-        <!-- Main content injected by JS -->
-    </div>
+    <div class="content" id="mainContent"></div>
 </div>
 
 <script>
-    // User role: "admin", "client", "partner" (change for demo)
-    let currentRole = "admin"; // demo: change to "client" or "partner"
-    let userName = "Admin Micah";
+// === User Role & Login (demo) ===
+let currentRole = "admin"; // admin / client / partner
+let userName = "Admin Micah";
 
-    document.getElementById('userName').innerText = "Welcome, " + userName;
+document.getElementById('userName').innerText = "Welcome, " + userName;
 
-    const sidebarMenu = document.getElementById('menu');
-    const mainContent = document.getElementById('mainContent');
-    const adminStats = document.getElementById('adminStats');
+// Sidebar menu based on role
+const sidebarMenu = document.getElementById('menu');
+const mainContent = document.getElementById('mainContent');
+const adminStats = document.getElementById('adminStats');
 
-    // Menu and stats based on role
-    const menus = {
-        admin: ["Dashboard", "Bookings", "Clients", "Partners", "Income", "Expenses", "Reports", "Settings", "Map", "Facebook", "TikTok"],
-        client: ["Dashboard", "My Bookings", "Billing / Invoice", "Profile", "Map", "Facebook", "TikTok"],
-        partner: ["Dashboard", "My Trips", "Earnings / Payment History", "Profile", "Map", "Facebook", "TikTok"]
-    };
+const menus = {
+    admin: ["Dashboard","Bookings","Income","Expenses","Net Cashflow","Revenue","Cash Records","Map","Facebook","TikTok"],
+    client: ["Dashboard","My Bookings","Billing / Invoice","Profile","Map","Facebook","TikTok"],
+    partner: ["Dashboard","My Trips","Earnings / Payment History","Profile","Map","Facebook","TikTok"]
+};
 
-    const statsData = {
-        totalBookings: 24,
-        income: "₱120,000",
-        expenses: "₱40,000",
-        tripsPending: 5,
-        tripsInProgress: 3,
-        tripsCompleted: 16
-    };
+// === Sample Data ===
+const incomeData = [
+    { cash: 1000, bpi: 2000, gcash: 500, deliveryFee: 100, carWash:50, fuelDeficit:0, cashIncomeRFID:0, loadRFID:0, reservationFee:500, deposit:500},
+    { cash: 2000, bpi:0, gcash:3000, deliveryFee:150, carWash:50, fuelDeficit:0, cashIncomeRFID:0, loadRFID:0, reservationFee:500, deposit:500 }
+];
 
-    function loadSidebar(role){
-        sidebarMenu.innerHTML = "";
-        menus[role].forEach(item => {
-            const li = document.createElement('li');
-            li.innerText = item;
-            li.onclick = () => loadContent(item);
-            sidebarMenu.appendChild(li);
-        });
-    }
+const expensesData = [
+    { cash: 500, bpi:1200, gcash:0 },
+    { cash: 1000, bpi:0, gcash:1500 }
+];
 
-    function loadStats(role){
-        if(role === "admin"){
-            adminStats.innerHTML = `
-                <div>Total Bookings: ${statsData.totalBookings}</div>
-                <div>Income: ${statsData.income}</div>
-                <div>Expenses: ${statsData.expenses}</div>
-            `;
-        } else {
-            adminStats.innerHTML = "";
-        }
-    }
+const netCashflowData = [
+    { date:"2025-08-16", agreementNo:"NC001", category:"Rental Payment", description:"Toyota Vios 1-day rental", mipad:0, receivable:1899, rfid:0, rfidServiceFee:0, cash:0, bpi:1899, gcash:0 },
+    { date:"2025-08-17", agreementNo:"NC002", category:"RFID Load", description:"RFID top-up", mipad:0, receivable:0, rfid:500, rfidServiceFee:10, cash:500, bpi:0, gcash:0 }
+];
 
-    function loadContent(menuItem){
-        let html = "";
-        if(currentRole === "admin"){
-            if(menuItem === "Dashboard" || menuItem === "Bookings"){
-                html = `
-                <h2>Bookings Overview</h2>
-                <table>
-                    <tr>
-                        <th>Client</th><th>Vehicle</th><th>Schedule</th><th>Status</th><th>Action</th>
-                    </tr>
-                    <tr>
-                        <td>Juan Dela Cruz</td><td>Toyota Vios</td><td>2025-08-16</td><td>Pending</td>
-                        <td>
-                            <button class="approve">Approve</button>
-                            <button class="reject">Reject</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Maria Santos</td><td>Honda City</td><td>2025-08-17</td><td>Approved</td>
-                        <td>
-                            <button class="approve">Approve</button>
-                            <button class="reject">Reject</button>
-                        </td>
-                    </tr>
-                </table>
-                `;
-            } else if(menuItem === "Income"){
-                html = `<h2>Monthly Income</h2><p>Total Income: ${statsData.income}</p>`;
-            } else if(menuItem === "Expenses"){
-                html = `<h2>Monthly Expenses</h2><p>Total Expenses: ${statsData.expenses}</p>`;
-            } else if(menuItem === "Map"){
-                html = `<h2>Our Location</h2>
-                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3857.163892364542!2d120.83534147457674!3d14.816057071766437!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397ab98fa4b41a7%3A0xda1b0d4442efe2c8!2sEasyDrive%20by%20Micah%20-%20Car%20Rental%20Services!5e0!3m2!1sen!2sph!4v1755188772649!5m2!1sen!2sph" width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy"></iframe>`;
-            } else if(menuItem === "Facebook"){
-                html = `<h2>Facebook Page</h2>
-                <a href="https://www.facebook.com/share/14FRBRZUrh5/" target="_blank">Open Facebook Page</a>`;
-            } else if(menuItem === "TikTok"){
-                html = `<h2>TikTok Page</h2>
-                <a href="https://www.tiktok.com/@easydrive.by.micah" target="_blank">Open TikTok Profile</a>`;
-            } else{
-                html = `<h2>${menuItem}</h2><p>Content for ${menuItem}</p>`;
-            }
-        } else if(currentRole === "client"){
-            if(menuItem === "Map"){
-                html = `<h2>Our Location</h2>
-                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3857.163892364542!2d120.83534147457674!3d14.816057071766437!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397ab98fa4b41a7%3A0xda1b0d4442efe2c8!2sEasyDrive%20by%20Micah%20-%20Car%20Rental%20Services!5e0!3m2!1sen!2sph!4v1755188772649!5m2!1sen!2sph" width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy"></iframe>`;
-            } else if(menuItem === "Facebook"){
-                html = `<h2>Facebook Page</h2>
-                <a href="https://www.facebook.com/share/14FRBRZUrh5/" target="_blank">Open Facebook Page</a>`;
-            } else if(menuItem === "TikTok"){
-                html = `<h2>TikTok Page</h2>
-                <a href="https://www.tiktok.com/@easydrive.by.micah" target="_blank">Open TikTok Profile</a>`;
-            } else {
-                html = `
-                <h2>My Bookings</h2>
-                <table>
-                    <tr><th>Vehicle</th><th>Date</th><th>Status</th></tr>
-                    <tr><td>Toyota Vios</td><td>2025-08-16</td><td>Pending</td></tr>
-                    <tr><td>Honda City</td><td>2025-08-17</td><td>Approved</td></tr>
-                </table>
-                `;
-            }
-        } else if(currentRole === "partner"){
-            if(menuItem === "Map"){
-                html = `<h2>Our Location</h2>
-                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3857.163892364542!2d120.83534147457674!3d14.816057071766437!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397ab98fa4b41a7%3A0xda1b0d4442efe2c8!2sEasyDrive%20by%20Micah%20-%20Car%20Rental%20Services!5e0!3m2!1sen!2sph!4v1755188772649!5m2!1sen!2sph" width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy"></iframe>`;
-            } else if(menuItem === "Facebook"){
-                html = `<h2>Facebook Page</h2>
-                <a href="https://www.facebook.com/share/14FRBRZUrh5/" target="_blank">Open Facebook Page</a>`;
-            } else if(menuItem === "TikTok"){
-                html = `<h2>TikTok Page</h2>
-                <a href="https://www.tiktok.com/@easydrive.by.micah" target="_blank">Open TikTok Profile</a>`;
-            } else {
-                html = `
-                <h2>My Assigned Trips</h2>
-                <table>
-                    <tr><th>Client</th><th>Vehicle</th><th>Schedule</th><th>Status</th></tr>
-                    <tr><td>Juan Dela Cruz</td><td>Toyota Vios</td><td>2025-08-16</td><td>In Progress</td></tr>
-                    <tr><td>Maria Santos</td><td>Honda City</td><td>2025-08-17</td><td>Completed</td></tr>
-                </table>
-                `;
-            }
-        }
-        mainContent.innerHTML = html;
-    }
+const cashRecords = { cash:5000, gcash:12000, bpi:25000, gotyme:8000, maya:7000, landbank:15000 };
 
-    function logout(){
-        alert("Logout successful!");
-    }
+// === Functions ===
 
-    // Initialize dashboard
-    loadSidebar(currentRole);
-    loadStats(currentRole);
-    loadContent("Dashboard");
-</script>
+// Sidebar
+function loadSidebar(role){
+    sidebarMenu.innerHTML="";
+    menus[role].forEach(item=>{
+        const li = document.createElement('li');
+        li.innerText=item;
+        li.onclick=()=> loadContent(item);
+        sidebarMenu.appendChild(li);
+    });
+}
 
-</body>
-</html>
+// Admin stats
+function loadStats(role){
+    if(role==="admin"){
+        const totalIncome = calculateTotalIncome();
+        const totalExpenses = calculateTotalExpenses();
+        const netRevenue = totalIncome - totalExpenses;
+        adminStats.innerHTML=`<div>Total Income: ₱${totalIncome.toLocaleString()}</div>
+                              <div>Total Expenses: ₱${totalExpenses.toLocaleString()}</div>
+                              <div>Net Revenue: ₱${netRevenue.toLocaleString()}</div>`;
+    }else{ adminStats.innerHTML=""; }
+}
+
+// Calculate totals
+function calculateTotalIncome(){ 
+    return incomeData.reduce((sum,b)=>{
+        return sum + (b.cash + b.bpi + b.gcash + b.deliveryFee + b.carWash + b.fuelDeficit + b.cashIncomeRFID + b.loadRFID + b.reservationFee + b.deposit);
+    },0);
+}
+
+function calculateTotalExpenses(){
+    return expensesData.reduce((sum,e)=>{
+        return sum + (e.cash + e.bpi + e.gcash);
+    },0);
+}
+
+// Net Cashflow per account
+function calculateNetCashflow(){
+    const incomeTotals = { cash:0,bpi:0,gcash:0 };
+    const expenseTotals = { cash:0,bpi:0,gcash:0 };
+    incomeData.forEach(b=>{ incomeTotals.cash+=b.cash; incomeTotals.bpi+=b.bpi; incomeTotals.gcash+=b.gcash; });
+    expensesData.forEach(e=>{ expenseTotals.cash+=e.cash; expenseTotals.bpi+=e.bpi; expenseTotals.gcash+=e.gcash; });
+    return { cash:incomeTotals.cash-expenseTotals.cash, bpi:incomeTotals.bpi-expenseTotals.bpi, gcash:incomeTotals.gcash-expenseTotals.gcash };
+}
+
+// Updated Cash Records
+function updateCashRecords(){
+    const net = calculateNetCashflow();
+    return { ...cashRecords, cash:cashRecords.cash+net.cash, bpi:cashRecords.bpi+net.bpi, gcash:cashRecords.gcash+net.gcash };
+}
+
+// Total Cash on Hand
+function calculateTotalCashOnHand(){
+    const updated = updateCashRecords();
+    return updated.cash + updated.bpi + updated.gcash + updated.gotyme + updated.maya + updated.landbank;
+}
+
+// === Content Load ===
+function loadContent(menuItem){
+    let html="";
+    if(currentRole==="admin"){
+        if(menuItem==="Dashboard"){
+            html="<h2>Welcome to EasyDrive Admin Dashboard</h2>";
+        }else if(menuItem==="Bookings"){
+            html=`<h2>Bookings Overview</h2>
+            <table>
+                <tr><th>Client</th><th>Vehicle</th><th>Schedule</th><th>Status</th><th>Action</th></tr>
+                <tr><td>Juan Dela Cruz</td><td>Toyota Vios</td><td>2025-08-16</td><td>Pending</td>
+                <td><button class="approve">Approve</button> <button class="reject">Reject</button></td></tr>
+            </table>`;
+        }else if(menuItem==="Income"){
+            html=`<h2>Income Table</h2>
+            <table>
+                <tr>
+                    <th>Cash</th><th>BPI</th><th>GCash</th><th>Delivery Fee</th><th>Car Wash</th><th>Fuel Deficit</th><th>Reservation</th><th>Deposit</th><th>Total</th>
+                </tr>`;
+            incomeData.forEach(b=>{
+                const total = b.cash+b.bpi+b.gcash+b.deliveryFee+b.carWash+b.fuelDeficit+b.reservationFee+b.deposit;
+                html+=`<tr>
+                    <td>₱${b.cash}</td><td>₱${b.bpi}</td><td>₱${b.gcash}</td>
+                    <td>₱${b.deliveryFee}</td><td>₱${b.carWash}</td><td>₱${b.fuelDeficit}</td>
+                    <td>₱${b.reservationFee}</td><td>₱${b.deposit}</td><td>₱${total}</td>
+                </tr>`;
+            });
+            html+=`<tr><td colspan="8" style="text-align:right;"><strong>Total Income</strong></td><td>₱${calculateTotalIncome()}</td></tr></table>`;
+        }else if(menuItem==="Expenses"){
+            html=`<h2>Expenses Table</h2>
+            <table><tr><th>Cash</th><th>BPI</th><th>GCash</th><th>Amount</th></tr>`;
+            expensesData.forEach(e=>{
+                const amt=e.cash+e.bpi+e.gcash;
+                html+=`<tr><td>₱${e.cash}</td><td>₱${e.bpi}</td><td>₱${e.gcash}</td><td>₱${amt}</td></tr>`;
+            });
+            html+=`<tr><td colspan="3" style="text-align:right;"><strong>Total Expenses</strong></td><td>₱${calculateTotalExpenses()}</td></tr></table>`;
+        }else if(menuItem==="Net Cashflow"){
+            const net = calculateNetCashflow();
+            html=`<h2>Net Cashflow</h2>
+            <table><tr><th>Cash</th><th>BPI</th><th>GCash</th></tr>
+            <tr><td>₱${net.cash}</td><td>₱${net.bpi}</td><td>₱${net.gcash}</td></tr></table>`;
+        }else if(menuItem==="Revenue"){
+            const revenue = calculateTotalIncome()-calculateTotalExpenses();
+            html=`<h2>Revenue Summary</h2>
+            <table><tr><th>Total Income</th><th>Total Expenses</th><th>Net Revenue</th></tr>
+            <tr><td>₱${calculateTotalIncome()}</td><td>₱${calculateTotalExpenses()}</td><td>₱${revenue}</td></tr></table>`;
+        }else if(menuItem==="Cash Records"){
+            const updated = updateCashRecords();
+            html=`<h2>Cash Records</h2>
+            <table>
+            <tr><th>Account</th><th>Balance</th></tr>
+            <tr><td>Cash</td><td>₱${updated.cash}</td></tr>
+            <tr><td>GCash</td><td>₱${updated.gcash}</td></tr>
+            <tr><td>BPI</td><td>₱${updated.bpi}</td></tr>
+            <tr><td>Gotyme</td><td>₱${updated.gotyme}</td></tr>
+            <tr><td>Maya</td><td>₱${updated.maya}</td></tr>
+            <tr><td>Landbank</td><td>₱${updated.landbank}</td></tr>
+            <tr><td><strong>Total Cash on Hand</strong></td><td>₱${calculateTotalCashOnHand()}</td></tr>
+            </table>`;
+        }else if(menuItem==="Map"){
+            html=`<h2>Our Location</h2>
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3857.163892364542!2d120.83534147457674!3d14.816057071766437!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397ab98fa4b41a7%3A0xda1b0d4442efe2c8!2sEasyDrive%20by%20Micah%20-%20Car%20Rental%20Services!5e0!3m2!1sen!2sph!4v1755188772649!5m2!1sen!2sph" width="100%" height="450"
