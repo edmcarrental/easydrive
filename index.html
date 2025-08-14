@@ -98,9 +98,8 @@ let bookingsData = [
 {client:"Juan Dela Cruz", vehicle:"Toyota Vios", plate:"ABC123", pickUp:"2025-08-16 09:00", return:"2025-08-17 09:00", duration:1, status:"Pending"},
 {client:"Maria Santos", vehicle:"Honda City", plate:"XYZ789", pickUp:"2025-08-17 10:00", return:"2025-08-18 10:00", duration:1, status:"Approved"},
 ];
-let incomeData = [
-{cash:1000,bpi:2000,gcash:500,deliveryFee:100,carWash:50,fuelDeficit:0,reservationFee:0,deposit:0}
-];
+let vehicleData = [];
+let incomeData = [{cash:1000,bpi:2000,gcash:500,deliveryFee:100,carWash:50,fuelDeficit:0,reservationFee:0,deposit:0}];
 let expensesData = [{cash:200,bpi:300,gcash:100,category:"Maintenance",description:"Car wash"}];
 let cashflowData = [{RFID:0,reservationFee:0,deposit:0,cash:0,bpi:0,gcash:0}];
 let cashRecords = {cash:0,bpi:0,gcash:0,gotyme:0,maya:0,landbank:0};
@@ -147,15 +146,19 @@ function logout(){location.reload();}
 
 // ==== Sidebar Menu ====
 function loadSidebar(role){
-const menuItems = role==="admin"?["Dashboard","Clients","Partners","Vehicles","Bookings","Income","Expenses","Net Cashflow","Cash Record","Logout"]
-:role==="partner"?["Dashboard","My Trips","Earnings","Profile","Map","Facebook","TikTok","Logout"]
-:["Dashboard","My Bookings","Billing","Profile","Map","Facebook","TikTok","Logout"];
-const menu=document.getElementById('menu'); menu.innerHTML="";
-menuItems.forEach(item=>{
-const li=document.createElement('li'); li.innerText=item;
-li.onclick=()=>loadContent(item);
-menu.appendChild(li);
-});
+    const menuItems = role==="admin"?[
+        "Dashboard","Clients","Partners","Vehicles","Add Vehicle","Bookings",
+        "Income","Expenses","Net Cashflow","Cash Record","Logout"
+    ]
+    :role==="partner"?["Dashboard","My Trips","Earnings","Profile","Map","Facebook","TikTok","Logout"]
+    :["Dashboard","My Bookings","Billing","Profile","Map","Facebook","TikTok","Logout"];
+
+    const menu=document.getElementById('menu'); menu.innerHTML="";
+    menuItems.forEach(item=>{
+        const li=document.createElement('li'); li.innerText=item;
+        li.onclick=()=>loadContent(item);
+        menu.appendChild(li);
+    });
 }
 
 // ==== Admin Dashboard ====
@@ -175,6 +178,56 @@ mainContent.innerHTML=html;
 updateTotals();
 }
 
+// ==== Add Vehicle ====
+function loadAddVehicle(){
+mainContent.innerHTML=`
+<h2>Add Vehicle</h2>
+<input type="text" id="vehicleName" placeholder="Vehicle Name/Model">
+<input type="text" id="vehiclePlate" placeholder="Plate Number">
+<input type="text" id="vehicleYear" placeholder="Year">
+<button onclick="addVehicle()">Add Vehicle</button>
+<h3>Current Vehicles</h3>
+<table id="vehiclesTable">
+<tr><th>Name/Model</th><th>Plate</th><th>Year</th></tr>
+</table>`;
+updateVehiclesTable();
+}
+
+function addVehicle(){
+const name=document.getElementById('vehicleName').value.trim();
+const plate=document.getElementById('vehiclePlate').value.trim();
+const year=document.getElementById('vehicleYear').value.trim();
+if(!name||!plate||!year){alert("All fields required"); return;}
+vehicleData.push({name, plate, year});
+alert("Vehicle added successfully!");
+document.getElementById('vehicleName').value="";
+document.getElementById('vehiclePlate').value="";
+document.getElementById('vehicleYear').value="";
+updateVehiclesTable();
+}
+
+function updateVehiclesTable(){
+const table=document.getElementById('vehiclesTable');
+table.innerHTML=`<tr><th>Name/Model</th><th>Plate</th><th>Year</th></tr>`;
+vehicleData.forEach(v=>{
+const tr=document.createElement('tr');
+tr.innerHTML=`<td>${v.name}</td><td>${v.plate}</td><td>${v.year}</td>`;
+table.appendChild(tr);
+});
+}
+
+// ==== Load Content ====
+const mainContent=document.getElementById('mainContent');
+function loadContent(item){
+if(item==="Logout"){logout(); return;}
+if(currentRole==="admin"){
+if(item==="Dashboard"){loadAdminDashboard(); return;}
+if(item==="Add Vehicle"){loadAddVehicle(); return;}
+mainContent.innerHTML=`<h2>${item}</h2><p contenteditable="true">Edit ${item} info here...</p>`;
+}
+else mainContent.innerHTML=`<h2>${item}</h2><p contenteditable="true">Edit ${item} info here...</p>`;
+}
+
 // ==== Update Totals and Cash Records ====
 function updateTotals(){
 const totalIncome = incomeData.reduce((sum,i)=>sum+Object.values(i).reduce((a,b)=>a+(parseFloat(b)||0),0),0);
@@ -192,17 +245,6 @@ cashRecords.cash = totalIncome - totalExpenses;
 cashRecords.bpi = totalIncome/2;
 cashRecords.gcash = totalIncome/2;
 cashRecords.gotyme = 0; cashRecords.maya=0; cashRecords.landbank=0;
-}
-
-// ==== Load Content ====
-const mainContent=document.getElementById('mainContent');
-function loadContent(item){
-if(item==="Logout"){logout(); return;}
-if(currentRole==="admin"){
-if(item==="Dashboard"){loadAdminDashboard(); return;}
-mainContent.innerHTML=`<h2>${item}</h2><p contenteditable="true">Edit ${item} info here...</p>`;
-}
-else mainContent.innerHTML=`<h2>${item}</h2><p contenteditable="true">Edit ${item} info here...</p>`;
 }
 
 // ==== Export CSV ====
