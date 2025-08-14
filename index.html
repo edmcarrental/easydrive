@@ -3,62 +3,69 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EasyDrive Admin Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<title>EasyDrive Full Dashboard</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif;}
-body{display:flex;min-height:100vh;}
-.sidebar{width:220px;background:#2c3e50;color:#ecf0f1;flex-shrink:0;}
+body{min-height:100vh;display:flex;}
+/* Sidebar */
+.sidebar{width:220px;background:#2c3e50;color:#ecf0f1;flex-shrink:0;display:none;overflow-y:auto;}
 .sidebar h2{text-align:center;padding:20px 0;font-size:18px;}
 .sidebar ul{list-style:none;padding:0;}
 .sidebar li{padding:12px 20px;cursor:pointer;display:flex;align-items:center;}
 .sidebar li:hover{background:#34495e;}
-.main{flex:1;background:#ecf0f1;display:flex;flex-direction:column;}
+/* Main */
+.main{flex:1;background:#ecf0f1;display:flex;flex-direction:column;display:none;overflow:hidden;}
+/* Header */
 .header{height:60px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 20px;box-shadow:0 2px 5px rgba(0,0,0,0.1);}
 .header .logo{display:flex;align-items:center;}
 .header .logo img{height:40px;margin-right:10px;cursor:pointer;}
 .header .stats{display:flex;gap:10px;}
 .header .stats div{background:#3498db;color:#fff;padding:5px 10px;border-radius:5px;font-size:14px;}
-.content{flex:1;padding:20px;overflow-y:auto;}
-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px;}
-th,td{padding:8px;border:1px solid #bdc3c7;text-align:left;}
+/* Content */
+.content{flex:1;padding:20px;overflow:auto;}
+table{width:100%;border-collapse: collapse;margin-top:10px;font-size:12px;}
+th, td{padding:6px;border:1px solid #bdc3c7;text-align:left;}
 th{background:#3498db;color:#fff;}
-button{padding:5px 10px;border:none;border-radius:3px;cursor:pointer;font-size:12px;}
-.approve{background:#27ae60;color:#fff;}
-.reject{background:#c0392b;color:#fff;}
-input[type="file"]{display:none;}
-input[type="text"],input[type="number"]{width:100%;padding:3px;font-size:12px;}
-[contenteditable="true"]{background:#fff;}
+button{padding:4px 8px;border:none;border-radius:3px;cursor:pointer;margin:2px;}
+.screen{width:100%;height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;background:#ecf0f1;}
+.screen input,.screen select{padding:8px;margin:5px 0;width:200px;}
+.screen button{margin-top:10px;}
+canvas{background:#fff;border:1px solid #ccc;margin-top:10px;}
+.status-Pending{background:yellow;color:black;}
+.status-Approved{background:green;color:white;}
+.status-Completed{background:blue;color:white;}
+.status-Rejected{background:red;color:white;}
 @media(max-width:768px){.sidebar{width:60px;}.sidebar li{font-size:12px;padding:10px 10px;}.header .stats{display:none;}}
 </style>
 </head>
 <body>
 
-<!-- Signup -->
-<div id="signupScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#ecf0f1;display:flex;align-items:center;justify-content:center;z-index:9999;">
-<div style="background:#fff;padding:30px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.2);text-align:center;width:300px;">
-<h2>Create Account</h2>
-<select id="signupRole">
+<!-- SignUp/Login Screens -->
+<div id="signupScreen" class="screen">
+<h2>Sign Up</h2>
+<input type="text" id="fullName" placeholder="Full Name">
+<input type="text" id="username" placeholder="Username">
+<input type="password" id="password" placeholder="Password">
+<select id="roleSelect">
 <option value="admin">Admin</option>
-<option value="client">Renter</option>
 <option value="partner">Partner</option>
-</select><br><br>
-<input type="text" id="signupUsername" placeholder="Username"><br><br>
-<input type="password" id="signupPassword" placeholder="Password"><br><br>
-<button onclick="createAccount()">Create Account</button>
-<p id="signupMsg" style="color:red;font-size:12px;"></p>
-</div>
+<option value="client">Client</option>
+</select>
+<button onclick="signup()">Sign Up</button>
+<p>Already have an account? <a href="#" onclick="showLogin()">Login</a></p>
 </div>
 
-<!-- Login -->
-<div id="loginScreen" style="display:none; position:fixed;top:0;left:0;width:100%;height:100%;background:#ecf0f1;display:flex;align-items:center;justify-content:center;z-index:9999;">
-<div style="background:#fff;padding:30px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.2);text-align:center;">
+<div id="loginScreen" class="screen" style="display:none;">
 <h2>Login</h2>
-<input type="text" id="loginUsername" placeholder="Username"><br><br>
-<input type="password" id="loginPassword" placeholder="Password"><br><br>
-<button onclick="loginAccount()">Login</button>
-<p id="loginMsg" style="color:red;font-size:12px;"></p>
-</div>
+<select id="loginRole">
+<option value="admin">Admin</option>
+<option value="partner">Partner</option>
+<option value="client">Client</option>
+</select>
+<input type="text" id="loginUsername" placeholder="Username">
+<input type="password" id="loginPassword" placeholder="Password">
+<button onclick="login()">Login</button>
+<p>Don't have account? <a href="#" onclick="showSignup()">Sign Up</a></p>
 </div>
 
 <!-- Sidebar -->
@@ -68,176 +75,156 @@ input[type="text"],input[type="number"]{width:100%;padding:3px;font-size:12px;}
 </div>
 
 <!-- Main Panel -->
-<div class="main">
+<div class="main" id="mainPanel">
 <div class="header">
 <div class="logo">
-<img id="logo" src="https://via.placeholder.com/40" alt="Logo" title="Click to change logo">
+<img src="https://via.placeholder.com/40" id="logo" alt="Logo" onclick="changeLogo()">
 <span id="roleTitle">Dashboard</span>
-<input type="file" id="logoInput" accept="image/*">
 </div>
 <div class="stats" id="adminStats"></div>
 <div>
-<span id="userName">Welcome, User</span>
+<span id="userName">Welcome</span>
 <button onclick="logout()">Logout</button>
 </div>
 </div>
-
-<!-- Cover -->
-<div id="coverContainer" style="position: relative; margin-bottom: 20px;">
-<img id="coverPhoto" src="https://via.placeholder.com/1200x200" alt="Cover Photo" style="width:100%; height:200px; object-fit:cover; cursor:pointer;" title="Click to change cover photo">
-<input type="file" id="coverInput" accept="image/*">
-</div>
-
 <div class="content" id="mainContent"></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-let accounts=[],currentRole="",userName="";
+// ==== Data ====
+let users = JSON.parse(localStorage.getItem('users'))||[];
+let currentUser = null;
+let currentRole = "";
+let bookingsData = [
+{client:"Juan Dela Cruz", vehicle:"Toyota Vios", plate:"ABC123", pickUp:"2025-08-16 09:00", return:"2025-08-17 09:00", duration:1, status:"Pending"},
+{client:"Maria Santos", vehicle:"Honda City", plate:"XYZ789", pickUp:"2025-08-17 10:00", return:"2025-08-18 10:00", duration:1, status:"Approved"},
+];
+let incomeData = [
+{cash:1000,bpi:2000,gcash:500,deliveryFee:100,carWash:50,fuelDeficit:0,reservationFee:0,deposit:0}
+];
+let expensesData = [{cash:200,bpi:300,gcash:100,category:"Maintenance",description:"Car wash"}];
+let cashflowData = [{RFID:0,reservationFee:0,deposit:0,cash:0,bpi:0,gcash:0}];
+let cashRecords = {cash:0,bpi:0,gcash:0,gotyme:0,maya:0,landbank:0};
+let pieChart=null;
 
-// === Signup/Login ===
-function createAccount(){
-const u=document.getElementById('signupUsername').value.trim();
-const p=document.getElementById('signupPassword').value.trim();
-let r=document.getElementById('signupRole').value;
-if(r==="admin" && accounts.some(a=>a.role==="admin")){
-document.getElementById('signupMsg').innerText="Admin account already exists!";return;}
-if(!u||!p){document.getElementById('signupMsg').innerText="Fill all fields!";return;}
-if(accounts.some(a=>a.username===u)){document.getElementById('signupMsg').innerText="Username exists!";return;}
-accounts.push({username:u,password:p,role:r});
-document.getElementById('signupMsg').style.color="green";
-document.getElementById('signupMsg').innerText="Account created! Login now.";
-setTimeout(()=>{document.getElementById('signupScreen').style.display="none"; document.getElementById('loginScreen').style.display="flex";},1000);
+// ==== Screens ====
+function showLogin(){document.getElementById('signupScreen').style.display='none'; document.getElementById('loginScreen').style.display='flex';}
+function showSignup(){document.getElementById('loginScreen').style.display='none'; document.getElementById('signupScreen').style.display='flex';}
+
+// ==== SignUp ====
+function signup(){
+const name=document.getElementById('fullName').value.trim();
+const username=document.getElementById('username').value.trim();
+const password=document.getElementById('password').value.trim();
+const role=document.getElementById('roleSelect').value;
+if(!name||!username||!password){alert("All fields required"); return;}
+if(users.find(u=>u.username===username)){alert("Username exists"); return;}
+if(role==="admin" && users.find(u=>u.role==="admin")){alert("Admin already exists"); return;}
+users.push({name, username, password, role});
+localStorage.setItem('users', JSON.stringify(users));
+alert("Sign Up successful. Please Login.");
+showLogin();
 }
 
-function loginAccount(){
-const u=document.getElementById('loginUsername').value.trim();
-const p=document.getElementById('loginPassword').value.trim();
-const a=accounts.find(a=>a.username===u && a.password===p);
-if(!a){document.getElementById('loginMsg').innerText="Invalid credentials!";return;}
-currentRole=a.role;
-userName=u;
-document.getElementById('userName').innerText="Welcome, "+userName;
-document.getElementById('loginScreen').style.display="none";
-loadSidebar(currentRole); loadStats(currentRole); loadContent("Dashboard");
+// ==== Login ====
+function login(){
+const role=document.getElementById('loginRole').value;
+const username=document.getElementById('loginUsername').value.trim();
+const password=document.getElementById('loginPassword').value.trim();
+const user=users.find(u=>u.username===username && u.password===password && u.role===role);
+if(!user){alert("Invalid credentials"); return;}
+currentUser=user; currentRole=role;
+document.getElementById('loginScreen').style.display='none';
+document.getElementById('signupScreen').style.display='none';
+document.getElementById('sidebar').style.display='block';
+document.getElementById('mainPanel').style.display='flex';
+document.getElementById('userName').innerText="Welcome, "+user.name;
+loadSidebar(role);
+if(role==="admin") loadAdminDashboard();
+else mainContent.innerHTML=`<h2>${role} Dashboard</h2><p>Edit info here...</p>`;
 }
-function logout(){ location.reload();}
 
-// === Sidebar ===
-const sidebarMenu=document.getElementById('menu');
-const mainContent=document.getElementById('mainContent');
-const adminStats=document.getElementById('adminStats');
-const menus={
-admin:["Dashboard","Clients","Partners","Vehicles","Bookings","Income","Expenses","Net Cashflow","Cash Records","Logout"],
-client:["Dashboard","My Bookings","Billing / Invoice","Profile","Map","Facebook","TikTok"],
-partner:["Dashboard","My Trips","Earnings / Payment History","Profile","Map","Facebook","TikTok"]
-};
+// ==== Logout ====
+function logout(){location.reload();}
+
+// ==== Sidebar Menu ====
 function loadSidebar(role){
-sidebarMenu.innerHTML="";
-menus[role].forEach(item=>{
-let li=document.createElement('li');
-li.innerText=item;
+const menuItems = role==="admin"?["Dashboard","Clients","Partners","Vehicles","Bookings","Income","Expenses","Net Cashflow","Cash Record","Logout"]
+:role==="partner"?["Dashboard","My Trips","Earnings","Profile","Map","Facebook","TikTok","Logout"]
+:["Dashboard","My Bookings","Billing","Profile","Map","Facebook","TikTok","Logout"];
+const menu=document.getElementById('menu'); menu.innerHTML="";
+menuItems.forEach(item=>{
+const li=document.createElement('li'); li.innerText=item;
 li.onclick=()=>loadContent(item);
-sidebarMenu.appendChild(li);
+menu.appendChild(li);
 });
 }
 
-// === Sample Data ===
-let vehicles=[{make:"Toyota Vios",plate:"ABC-123",rentedCount:5},{make:"Honda City",plate:"XYZ-456",rentedCount:3},{make:"Toyota Innova",plate:"INN-222",rentedCount:6},{make:"Mitsubishi Mirage",plate:"MIR-789",rentedCount:2},{make:"Suzuki Swift",plate:"SUZ-111",rentedCount:4}];
-
-let bookingsData=[{client:"Juan Dela Cruz",vehicle:"Toyota Vios",plate:"ABC-123",pickUp:"2025-08-16 09:00",return:"2025-08-17 09:00",duration:"1 day",status:"Pending"},{client:"Maria Santos",vehicle:"Honda City",plate:"XYZ-456",pickUp:"2025-08-17 10:00",return:"2025-08-18 10:00",duration:"1 day",status:"Approved"},{client:"Pedro Reyes",vehicle:"Toyota Innova",plate:"INN-222",pickUp:"2025-08-15 08:00",return:"2025-08-16 08:00",duration:"1 day",status:"Completed"}];
-
-let incomeData=[{cash:1000,bpi:2000,gcash:500,deliveryFee:100,carWash:50,fuelDeficit:0,cashIncomeRFID:0,loadRFID:0,reservationFee:500,deposit:500},{cash:2000,bpi:0,gcash:3000,deliveryFee:150,carWash:50,fuelDeficit:0,cashIncomeRFID:0,loadRFID:0,reservationFee:500,deposit:500}];
-
-let expensesData=[{cash:500,bpi:1200,gcash:0},{cash:1000,bpi:0,gcash:1500}];
-
-let cashRecords={cash:5000,gcash:12000,bpi:25000,gotyme:8000,maya:7000,landbank:15000};
-
-// === Editable Logo & Cover ===
-document.getElementById('logo').addEventListener('click',()=>document.getElementById('logoInput').click());
-document.getElementById('logoInput').addEventListener('change',e=>{if(e.target.files && e.target.files[0]){document.getElementById('logo').src=URL.createObjectURL(e.target.files[0]);}});
-document.getElementById('coverPhoto').addEventListener('click',()=>document.getElementById('coverInput').click());
-document.getElementById('coverInput').addEventListener('change',e=>{if(e.target.files && e.target.files[0]){document.getElementById('coverPhoto').src=URL.createObjectURL(e.target.files[0]);}});
-
-// === Metrics ===
-function getTotalBookings(){ return bookingsData.length;}
-function getNumberVehiclesRented(){ let rented=bookingsData.filter(b=>b.status==="Approved"||b.status==="Completed").map(b=>b.plate); return new Set(rented).size;}
-function getTop5RentedVehicles(){ return vehicles.sort((a,b)=>b.rentedCount-a.rentedCount).slice(0,5);}
-function calculateTotalIncome(){return incomeData.reduce((sum,b)=>sum+(b.cash+b.bpi+b.gcash+b.deliveryFee+b.carWash+b.fuelDeficit+b.cashIncomeRFID+b.loadRFID+b.reservationFee+b.deposit),0);}
-function calculateTotalExpenses(){return expensesData.reduce((sum,e)=>sum+(e.cash+e.bpi+e.gcash),0);}
-function calculateNetCashflow(){ const incomeTotals={cash:0,bpi:0,gcash:0}; const expenseTotals={cash:0,bpi:0,gcash:0}; incomeData.forEach(b=>{incomeTotals.cash+=b.cash;incomeTotals.bpi+=b.bpi;incomeTotals.gcash+=b.gcash;}); expensesData.forEach(e=>{expenseTotals.cash+=e.cash;expenseTotals.bpi+=e.bpi;expenseTotals.gcash+=e.gcash;}); return {cash:incomeTotals.cash-expenseTotals.cash,bpi:incomeTotals.bpi-expenseTotals.bpi,gcash:incomeTotals.gcash-expenseTotals.gcash};}
-function updateCashRecords(){ const net=calculateNetCashflow(); return {...cashRecords,cash:cashRecords.cash+net.cash,bpi:cashRecords.bpi+net.bpi,gcash:cashRecords.gcash+net.gcash};}
-function calculateTotalCashOnHand(){const updated=updateCashRecords();return updated.cash+updated.bpi+updated.gcash+updated.gotyme+updated.maya+updated.landbank;}
-function loadStats(role){if(role==="admin"){ const totalIncome=calculateTotalIncome(); const totalExpenses=calculateTotalExpenses(); const netRevenue=totalIncome-totalExpenses; adminStats.innerHTML=`<div>Total Income: ₱${totalIncome.toLocaleString()}</div><div>Total Expenses: ₱${totalExpenses.toLocaleString()}</div><div>Net Revenue: ₱${netRevenue.toLocaleString()}</div>`;} else{adminStats.innerHTML="";}}
-
-// === Admin Dashboard Content with Auto-Save ===
+// ==== Admin Dashboard ====
 function loadAdminDashboard(){
-const totalBookings=getTotalBookings();
-const numberVehicles=getNumberVehiclesRented();
-const topVehicles=getTop5RentedVehicles();
-let html=`<h2>Admin Dashboard Overview</h2>
-<div style="display:flex;gap:20px;margin-bottom:20px;">
-<div style="background:#3498db;color:#fff;padding:20px;border-radius:5px;"><h3>Total Bookings</h3><p style="font-size:24px;">${totalBookings}</p></div>
-<div style="background:#2ecc71;color:#fff;padding:20px;border-radius:5px;"><h3>Vehicles Rented</h3><p style="font-size:24px;">${numberVehicles}</p></div>
-</div>
-<div style="width:400px;margin-bottom:30px;"><h3>Top 5 Most Rented Vehicles</h3><canvas id="topVehiclesChart"></canvas></div>
-<div><h3>Recent Bookings</h3><table id="bookingsTable">
-<tr><th>Client Name</th><th>Vehicle</th><th>Plate Number</th><th>Pick-Up Date & Time</th><th>Return Date & Time</th><th>Duration</th><th>Status</th></tr>`;
-html+=bookingsData.map((b,i)=>`<tr data-index="${i}" contenteditable="true"><td>${b.client}</td><td>${b.vehicle}</td><td>${b.plate}</td><td>${b.pickUp}</td><td>${b.return}</td><td>${b.duration}</td><td>${b.status}</td></tr>`).join("");
-html+="</table></div>";
-
-// Income Table
-html+=`<h3>Income</h3><table id="incomeTable"><tr><th>Cash</th><th>BPI</th><th>GCASH</th><th>Delivery Fee</th><th>Car Wash</th><th>Fuel Deficit</th><th>Cash RFID</th><th>Load RFID</th><th>Reservation Fee</th><th>Deposit</th></tr>`;
-incomeData.forEach((i,index)=>{html+=`<tr data-index="${index}" contenteditable="true"><td>${i.cash}</td><td>${i.bpi}</td><td>${i.gcash}</td><td>${i.deliveryFee}</td><td>${i.carWash}</td><td>${i.fuelDeficit}</td><td>${i.cashIncomeRFID}</td><td>${i.loadRFID}</td><td>${i.reservationFee}</td><td>${i.deposit}</td></tr>`;});
-html+="</table>";
-
-// Expenses Table
-html+=`<h3>Expenses</h3><table id="expensesTable"><tr><th>Cash</th><th>BPI</th><th>GCASH</th></tr>`;
-expensesData.forEach((e,index)=>{html+=`<tr data-index="${index}" contenteditable="true"><td>${e.cash}</td><td>${e.bpi}</td><td>${e.gcash}</td></tr>`;});
-html+="</table>";
-
-// Cash Records
-let updatedCash=updateCashRecords();
-html+=`<h3>Cash Records</h3><table id="cashRecordsTable"><tr><th>Cash</th><th>BPI</th><th>GCASH</th><th>Gotyme</th><th>Maya</th><th>Landbank</th></tr>`;
-html+=`<tr contenteditable="true"><td>${updatedCash.cash}</td><td>${updatedCash.bpi}</td><td>${updatedCash.gcash}</td><td>${cashRecords.gotyme}</td><td>${cashRecords.maya}</td><td>${cashRecords.landbank}</td></tr></table>`;
-
+let html=`<h2>Admin Dashboard</h2>`;
+// Pie Chart
+html+=`<canvas id="pieChart" width="400" height="200"></canvas>`;
+// Recent Bookings Table
+html+=`<h3>Recent Bookings</h3>
+<table id="bookingsTable">
+<tr><th>Client</th><th>Vehicle</th><th>Plate</th><th>Pick-Up</th><th>Return</th><th>Duration</th><th>Status</th></tr>`;
+bookingsData.forEach(b=>{
+html+=`<tr contenteditable="true" class="status-${b.status}">
+<td>${b.client}</td><td>${b.vehicle}</td><td>${b.plate}</td>
+<td>${b.pickUp}</td><td>${b.return}</td><td>${b.duration}</td><td>${b.status}</td></tr>`;
+});
+html+=`</table><button onclick="exportCSV('bookings')">Export Bookings CSV</button>`;
 mainContent.innerHTML=html;
-
-// Chart
-const ctx=document.getElementById('topVehiclesChart').getContext('2d');
-new Chart(ctx,{type:'pie',data:{labels:topVehicles.map(v=>v.make),datasets:[{label:'Rented Count',data:topVehicles.map(v=>v.rentedCount),backgroundColor:['#3498db','#2ecc71','#e74c3c','#f1c40f','#9b59b6']}]},options:{responsive:true}});
-
-// === Auto-save logic ===
-// Bookings
-document.querySelectorAll('#bookingsTable tr[data-index]').forEach(row=>{
-row.addEventListener('input',()=>{const idx=row.getAttribute('data-index'); const cells=row.querySelectorAll('td'); bookingsData[idx]={client:cells[0].innerText,vehicle:cells[1].innerText,plate:cells[2].innerText,pickUp:cells[3].innerText,return:cells[4].innerText,duration:cells[5].innerText,status:cells[6].innerText}; loadStats('admin');});
-});
-// Income
-document.querySelectorAll('#incomeTable tr[data-index]').forEach(row=>{
-row.addEventListener('input',()=>{const idx=row.getAttribute('data-index'); const cells=row.querySelectorAll('td'); incomeData[idx]={cash:parseFloat(cells[0].innerText)||0,bpi:parseFloat(cells[1].innerText)||0,gcash:parseFloat(cells[2].innerText)||0,deliveryFee:parseFloat(cells[3].innerText)||0,carWash:parseFloat(cells[4].innerText)||0,fuelDeficit:parseFloat(cells[5].innerText)||0,cashIncomeRFID:parseFloat(cells[6].innerText)||0,loadRFID:parseFloat(cells[7].innerText)||0,reservationFee:parseFloat(cells[8].innerText)||0,deposit:parseFloat(cells[9].innerText)||0}; loadStats('admin');});
-});
-// Expenses
-document.querySelectorAll('#expensesTable tr[data-index]').forEach(row=>{
-row.addEventListener('input',()=>{const idx=row.getAttribute('data-index'); const cells=row.querySelectorAll('td'); expensesData[idx]={cash:parseFloat(cells[0].innerText)||0,bpi:parseFloat(cells[1].innerText)||0,gcash:parseFloat(cells[2].innerText)||0}; loadStats('admin');});
-});
-// Cash Records
-document.querySelectorAll('#cashRecordsTable tr').forEach(row=>{
-row.addEventListener('input',()=>{const cells=row.querySelectorAll('td'); cashRecords={cash:parseFloat(cells[0].innerText)||0,bpi:parseFloat(cells[1].innerText)||0,gcash:parseFloat(cells[2].innerText)||0,gotyme:parseFloat(cells[3].innerText)||0,maya:parseFloat(cells[4].innerText)||0,landbank:parseFloat(cells[5].innerText)||0}; loadStats('admin');});
-});
-
+renderPieChart();
+updateTotals();
 }
 
-// === Load content based on menu ===
-function loadContent(menuItem){
-if(menuItem==="Logout"){logout();return;}
+// ==== Pie Chart ====
+function renderPieChart(){
+const ctx=document.getElementById('pieChart').getContext('2d');
+const vehicleCount={};
+bookingsData.forEach(b=>{vehicleCount[b.vehicle]=(vehicleCount[b.vehicle]||0)+1;});
+if(pieChart) pieChart.destroy();
+pieChart=new Chart(ctx,{type:'pie',data:{labels:Object.keys(vehicleCount),datasets:[{data:Object.values(vehicleCount),backgroundColor:['#3498db','#e74c3c','#2ecc71','#f1c40f','#f39c12']}]},options:{responsive:true}});
+}
+
+// ==== Update Totals and Cash Records ====
+function updateTotals(){
+const totalIncome = incomeData.reduce((sum,i)=>sum+Object.values(i).reduce((a,b)=>a+(parseFloat(b)||0),0),0);
+const totalExpenses = expensesData.reduce((sum,e)=>sum+Object.values(e).reduce((a,b)=>a+(parseFloat(b)||0),0),0);
+const netRevenue = totalIncome - totalExpenses;
+document.getElementById('adminStats').innerHTML=`
+<div>Total Bookings: ${bookingsData.length}</div>
+<div>Vehicles Rented: ${new Set(bookingsData.map(b=>b.vehicle)).size}</div>
+<div>Total Income: ₱${totalIncome}</div>
+<div>Total Expenses: ₱${totalExpenses}</div>
+<div>Net Revenue: ₱${netRevenue}</div>
+`;
+// Update Cash Records demo
+cashRecords.cash = totalIncome - totalExpenses;
+cashRecords.bpi = totalIncome/2;
+cashRecords.gcash = totalIncome/2;
+cashRecords.gotyme = 0; cashRecords.maya=0; cashRecords.landbank=0;
+}
+
+// ==== Load Content ====
+const mainContent=document.getElementById('mainContent');
+function loadContent(item){
+if(item==="Logout"){logout(); return;}
 if(currentRole==="admin"){
-if(menuItem==="Dashboard"){loadAdminDashboard(); return;}
-mainContent.innerHTML=`<h2>${menuItem}</h2><p contenteditable="true">Edit ${menuItem} info here...</p>`;}
-else{
-mainContent.innerHTML=`<h2>${menuItem}</h2><p contenteditable="true">Edit ${menuItem} info here...</p>`;}
+if(item==="Dashboard"){loadAdminDashboard(); return;}
+mainContent.innerHTML=`<h2>${item}</h2><p contenteditable="true">Edit ${item} info here...</p>`;
+}
+else mainContent.innerHTML=`<h2>${item}</h2><p contenteditable="true">Edit ${item} info here...</p>`;
 }
 
-// Initialize
-document.getElementById('signupScreen').style.display="flex";
+// ==== Export CSV ====
+function exportCSV(type){alert("Export CSV: "+type+" (implement as needed)");}
+
+// ==== Change Logo ====
+function changeLogo(){let url=prompt("Enter new logo URL"); if(url) document.getElementById('logo').src=url;}
 </script>
 </body>
 </html>
